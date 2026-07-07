@@ -1,0 +1,40 @@
+/* stats.css — 통계 탭: 자주/드문 번호, 홀짝 분포, 번호별 출현 빈도 */
+
+.stats { padding-top: 8px; }
+.stats[hidden] { display: none; }
+.stats-sub { margin-bottom: 18px; }
+
+/* 자주/드물게 나온 번호 */
+.stat-duo { display: flex; gap: 12px; margin-bottom: 18px; }
+.stat-card { flex: 1; background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 6px 18px rgba(90, 80, 66, .08); }
+.stat-card .label { margin: 0 0 10px; font-size: 12px; font-weight: 700; }
+.label--hot { color: var(--gold); }
+.label--cold { color: #5f8ba2; }
+.stat-balls { display: flex; gap: 6px; }
+
+/* 홀짝 분포 */
+.oe-card { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 6px 18px rgba(90, 80, 66, .08); margin-bottom: 18px; }
+.oe-card .label { margin: 0 0 12px; font-size: 13px; font-weight: 800; color: var(--ink); }
+.oe-bar { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+.oe-odd, .oe-even {
+  color: #fff; font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.oe-odd { background: var(--brand); }
+.oe-even { background: var(--gold); }
+
+/* 번호별 출현 빈도 (45줄) */
+.freq-card { background: #fff; border-radius: 16px; padding: 18px 16px; box-shadow: 0 6px 18px rgba(90, 80, 66, .08); }
+.freq-card .label { margin: 0 0 14px; font-size: 13px; font-weight: 800; color: var(--ink); }
+.freq-list { display: flex; flex-direction: column; gap: 6px; }
+.freq-row { display: flex; align-items: center; gap: 9px; }
+.freq-dot {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  font-size: 11px; font-weight: 800; color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 46%), var(--ball-color);
+}
+.freq-track { flex: 1; height: 14px; background: #f0ede7; border-radius: 7px; overflow: hidden; }
+.freq-bar { height: 100%; border-radius: 7px; background: var(--ball-color); opacity: .85; }
+.freq-count { width: 26px; text-align: right; font-size: 11px; font-weight: 700; color: var(--muted); }

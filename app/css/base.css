@@ -1,0 +1,107 @@
+/* base.css — 공통 바탕: 색 변수, 리셋, 앱 프레임, 상단 바, 하단 탭, 애니메이션 정의 */
+
+:root {
+  /* 브랜드 */
+  --brand: #24506e;
+  --brand-grad: linear-gradient(180deg, #2c5a7c, #22496a);
+  --gold: #b0862f;
+  --ink: #2a2724;
+  --muted: #8b857b;
+  --muted-2: #6f6a61;
+  /* 공 색 5구간 (디자인 ballBg 값 그대로) */
+  --ball-yellow: #f4c02e; /* 1–10 */
+  --ball-blue: #3faee0;   /* 11–20 */
+  --ball-red: #f16a6a;    /* 21–30 */
+  --ball-gray: #9a938a;   /* 31–40 */
+  --ball-green: #9fc93c;  /* 41–45 */
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #cdd1d5;
+  color: var(--ink);
+}
+button { font-family: inherit; }
+
+/* 키보드 포커스 표시 (접근성 기본선) */
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* 앱 프레임: 440px 가운데 정렬 */
+.page { min-height: 100vh; display: flex; justify-content: center; background: #c5cacf; }
+.frame {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef1f4 0%, #e2e7ec 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 60px rgba(46, 54, 60, .2);
+}
+
+/* 상단 바 */
+.topbar { padding: 18px 22px 12px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand-ball {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 33% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 46%), var(--brand);
+  box-shadow: 0 2px 6px rgba(36, 80, 110, .4);
+}
+.brand-name { font-weight: 800; font-size: 16px; letter-spacing: -.02em; color: var(--ink); }
+.round-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: -.01em; }
+
+/* 스크롤 영역 (하단 탭에 안 가리게 아래 여백 108px) */
+.scroll-area { flex: 1; overflow-y: auto; padding: 4px 20px 108px; }
+
+/* 하단 탭 바 */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 440px;
+  background: rgba(238, 241, 244, .94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(46, 54, 60, .12);
+  display: flex;
+  padding: 8px 12px 22px;
+  z-index: 20;
+}
+.tabbar button {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 8px 0; border: none; background: transparent; cursor: pointer;
+  font-size: 11px; font-weight: 700; letter-spacing: -.01em;
+  color: #9aa1a8;
+}
+.tabbar button.is-active { color: var(--brand); }
+
+/* 애니메이션 (디자인 정의 그대로 — 이름 유지) */
+@keyframes drumspin { to { transform: rotate(360deg); } }
+@keyframes ballpop {
+  0% { transform: translateY(26px) scale(.4); opacity: 0; }
+  55% { transform: translateY(-6px) scale(1.12); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes jiggle {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, -3px); }
+  50% { transform: translate(3px, 2px); }
+  75% { transform: translate(-2px, 3px); }
+}
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes fadeup {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 모션 줄이기 설정 존중 (접근성 기본선) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

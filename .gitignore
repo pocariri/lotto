@@ -1,0 +1,17 @@
+# 환경변수 (비밀값은 절대 코드에 넣지 않는다 — 루트 CLAUDE.md 8번)
+.env
+.env.*
+!.env.example
+
+# 의존성
+node_modules/
+
+# OS 잡파일
+.DS_Store
+Thumbs.db
+
+# Vercel CLI가 만드는 로컬 링크 정보
+.vercel/
+
+# 로그
+*.log

@@ -1,0 +1,67 @@
+/* check.css — 당첨 확인 탭: 회차 칩, 내 번호 6칸, 숫자패드, 결과 카드 */
+
+.check { padding-top: 8px; }
+.check[hidden] { display: none; }
+
+/* 회차 칩 */
+.round-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; }
+.chip {
+  flex: 0 0 auto; padding: 9px 15px;
+  border-radius: 11px; font-size: 14px; font-weight: 800; cursor: pointer;
+  border: 1.5px solid #d8d1c7; background: #fff; color: var(--muted-2);
+}
+.chip.is-active { border-color: var(--brand); background: var(--brand); color: #fff; }
+
+/* 내 번호 카드 */
+.entry-card { padding: 18px 16px; margin-bottom: 14px; }
+.entry-card .label { margin: 0 0 12px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.entry-row { display: flex; gap: 8px; justify-content: space-between; }
+
+/* 빈 칸 / 선택 중인 칸 / 채워진 칸 */
+.slot {
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  border: 2px dashed #cfc8bd; background: #f5f2ec;
+}
+.slot.is-active { border: 2px solid var(--brand); background: #eef3f7; }
+/* 채워진 칸: .slot 배경이 공 색을 덮지 않도록 별도 클래스로 */
+.entry-ball { border: none; padding: 0; cursor: pointer; }
+
+/* 숫자패드 카드 */
+.pad-card { padding: 16px; margin-bottom: 16px; }
+.pad-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.pad-cell {
+  aspect-ratio: 1; padding: 0;
+  border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer;
+  border: 1px solid #eae4db; background: #faf8f4; color: var(--muted-2);
+}
+.pad-cell.is-selected {
+  border-color: var(--ball-color);
+  background: var(--ball-color);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+}
+
+/* 6개 못 채웠을 때 안내 문구 */
+.check-notice { margin: 12px 0 0; font-size: 13px; font-weight: 700; color: var(--gold); text-align: center; }
+
+/* 결과 카드 */
+.check-result {
+  margin-top: 18px; padding: 22px 18px;
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(90, 80, 66, .1);
+  animation: fadeup .4s ease;
+}
+.check-result[hidden] { display: none; }
+.check-result .sub { margin: 0 0 2px; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+.win-row { display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 12px 0 18px; }
+.win-row .plus { font-size: 20px; color: #b0a99e; font-weight: 700; margin: 0 2px; }
+
+.rank-box { text-align: center; padding: 16px; border-radius: 14px; background: #f0ede7; }
+.rank-box.is-win { background: #eef3f7; }
+.rank-box .match { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted-2); }
+.rank-box .rank { margin: 4px 0 0; font-size: 32px; font-weight: 800; letter-spacing: -.02em; color: var(--muted); }
+.rank-box.is-win .rank { color: var(--brand); }
+
+/* 1등 당첨금 줄 (계약 v1.2 firstPrize) */
+.prize-line { margin: 12px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted-2); }

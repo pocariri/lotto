@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fastly.jsdelivr.net">
+<link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Pretendard', -apple-system, sans-serif; background: #cdd1d5; }
+  @keyframes drumspin { to { transform: rotate(360deg); } }
+  @keyframes ballpop { 0% { transform: translateY(26px) scale(.4); opacity: 0; } 55% { transform: translateY(-6px) scale(1.12); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+  @keyframes jiggle { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-2px,-3px); } 50% { transform: translate(3px,2px); } 75% { transform: translate(-2px,3px); } }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;justify-content:center;background:#c5cacf;padding:0;">
+  <div style="width:100%;max-width:440px;min-height:100vh;background:linear-gradient(180deg,#eef1f4 0%,#e2e7ec 100%);display:flex;flex-direction:column;position:relative;box-shadow:0 0 60px rgba(46,54,60,.2);">
+
+    <!-- top bar -->
+    <div style="padding:18px 22px 12px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 33% 28%,rgba(255,255,255,.6),rgba(255,255,255,0) 46%),#24506e;box-shadow:0 2px 6px rgba(36,80,110,.4);"></div>
+        <span style="font-weight:800;font-size:16px;letter-spacing:-.02em;color:#2a2724;">로또 드로우</span>
+      </div>
+      <span style="font-size:12px;font-weight:600;color:#8b857b;letter-spacing:-.01em;">{{ roundLabel }}</span>
+    </div>
+
+    <!-- scroll area -->
+    <div style="flex:1;overflow-y:auto;padding:4px 20px 108px;">
+
+      <!-- ============ TAB 1 : 추첨 ============ -->
+      <sc-if value="{{ isDraw }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <!-- idle -->
+          <sc-if value="{{ showIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 0 8px;animation:fadeup .5s ease;">
+              <p style="margin:0 0 5px;font-size:12px;font-weight:700;color:#b0862f;letter-spacing:.16em;">TODAY'S DRAW</p>
+              <h1 style="margin:0 0 6px;font-size:29px;font-weight:800;letter-spacing:-.03em;color:#2a2724;line-height:1.15;">행운의 번호를<br>뽑아볼까요?</h1>
+              <p style="margin:0 0 22px;font-size:14px;color:#8b857b;font-weight:500;">고정·제외 번호를 고르고 추첨기를 돌려보세요</p>
+              <div style="width:154px;height:154px;border-radius:50%;position:relative;background:radial-gradient(circle at 40% 34%,#fbfaf7,#d9d3c8 78%);box-shadow:inset 0 6px 18px rgba(255,255,255,.7),inset 0 -10px 24px rgba(120,110,96,.3),0 16px 40px rgba(90,80,66,.22);display:flex;align-items:center;justify-content:center;animation:floaty 4s ease-in-out infinite;">
+                <div style="width:120px;height:120px;border-radius:50%;border:3px dashed rgba(120,110,96,.28);display:flex;align-items:center;justify-content:center;">
+                  <div style="display:flex;gap:6px;">
+                    <div style="width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 45%),#f4c02e;"></div>
+                    <div style="width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 45%),#f16a6a;margin-top:12px;"></div>
+                    <div style="width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 45%),#3faee0;"></div>
+                  </div>
+                </div>
+              </div>
+              <button onClick="{{ goPicker }}" style="margin-top:26px;width:100%;padding:18px;border:none;border-radius:18px;background:linear-gradient(180deg,#2c5a7c,#22496a);color:#fff;font-size:18px;font-weight:800;letter-spacing:-.01em;cursor:pointer;box-shadow:0 10px 24px rgba(34,73,106,.36);font-family:inherit;">추첨하기</button>
+            </div>
+          </sc-if>
+
+          <!-- picker -->
+          <sc-if value="{{ showPicker }}" hint-placeholder-val="{{ true }}">
+            <div style="padding-top:8px;animation:fadeup .4s ease;">
+              <h2 style="margin:6px 0 3px;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#2a2724;">번호 설정</h2>
+              <p style="margin:0 0 14px;font-size:13px;color:#8b857b;font-weight:500;">번호를 눌러 <b style="color:#24506e;">고정</b> → <b style="color:#b0862f;">제외</b> 순으로 지정하세요</p>
+              <div style="display:flex;gap:14px;margin-bottom:16px;font-size:12px;font-weight:700;color:#6f6a61;">
+                <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#24506e;"></span>고정 {{ fixedCount }}/6</span>
+                <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:4px;background:#efe7d6;border:1.5px dashed #c9b483;"></span>제외 {{ excludedCount }}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:7px;">
+                <sc-for list="{{ cells }}" as="c" hint-placeholder-count="45">
+                  <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.n }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:20px;">
+                <button onClick="{{ resetPicks }}" style="flex:0 0 auto;padding:16px 20px;border:1.5px solid #cfc8bd;border-radius:15px;background:transparent;color:#6f6a61;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">초기화</button>
+                <button onClick="{{ runDraw }}" style="flex:1;padding:16px;border:none;border-radius:15px;background:linear-gradient(180deg,#2c5a7c,#22496a);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(34,73,106,.34);font-family:inherit;">추첨 시작</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- drawing / result -->
+          <sc-if value="{{ showDrawing }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;align-items:center;padding-top:14px;">
+              <!-- drum -->
+              <div style="width:230px;height:230px;border-radius:50%;position:relative;background:radial-gradient(circle at 40% 34%,#fbfaf7,#d6d0c5 80%);box-shadow:inset 0 8px 20px rgba(255,255,255,.7),inset 0 -12px 28px rgba(120,110,96,.32),0 18px 42px rgba(90,80,66,.22);overflow:hidden;">
+                <div style="{{ drumStyle }}">
+                  <sc-for list="{{ drumBalls }}" as="b" hint-placeholder-count="10">
+                    <div style="{{ b.style }}"></div>
+                  </sc-for>
+                </div>
+                <div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(120,110,96,.16);pointer-events:none;"></div>
+                <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(239,236,230,.82);box-shadow:0 2px 8px rgba(90,80,66,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#8b857b;">{{ drumLabel }}</div>
+              </div>
+
+              <!-- result balls -->
+              <div style="display:flex;gap:9px;margin-top:34px;min-height:56px;">
+                <sc-for list="{{ resultSlots }}" as="s" hint-placeholder-count="6">
+                  <div style="{{ s.style }}">{{ s.n }}</div>
+                </sc-for>
+              </div>
+
+              <!-- actions when done -->
+              <sc-if value="{{ drawDone }}" hint-placeholder-val="{{ true }}">
+                <div style="width:100%;animation:fadeup .5s ease;">
+                  <p style="text-align:center;margin:18px 0 20px;font-size:14px;font-weight:700;color:#b0862f;letter-spacing:.01em;">행운을 담은 6개의 번호</p>
+                  <button onClick="{{ copyNums }}" style="width:100%;padding:16px;border:1.5px solid #cfc8bd;border-radius:15px;background:#fff;color:#2a2724;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;font-family:inherit;">{{ copyLabel }}</button>
+                  <button onClick="{{ goBuy }}" style="width:100%;padding:16px;border:none;border-radius:15px;background:linear-gradient(180deg,#2c5a7c,#22496a);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(34,73,106,.32);font-family:inherit;">동행복권에서 구매하기 →</button>
+                  <button onClick="{{ goPicker }}" style="width:100%;padding:14px;border:none;background:transparent;color:#8b857b;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit;">다시 뽑기</button>
+                  <p style="text-align:center;font-size:11px;color:#a09a8f;margin:8px 0 0;line-height:1.5;">본 서비스는 재미를 위한 번호 추천이며 당첨을 보장하지 않습니다.<br>복권은 만 19세 이상만 구매할 수 있습니다.</p>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ TAB 2 : 당첨 확인 ============ -->
+      <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ false }}">
+        <div style="padding-top:8px;">
+          <h2 style="margin:6px 0 3px;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#2a2724;">당첨 확인</h2>
+          <p style="margin:0 0 16px;font-size:13px;color:#8b857b;font-weight:500;">회차를 고르고 내 번호 6개를 입력하세요</p>
+
+          <!-- round selector -->
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px;">
+            <sc-for list="{{ roundChips }}" as="r" hint-placeholder-count="5">
+              <button onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
+            </sc-for>
+          </div>
+
+          <!-- my number slots -->
+          <div style="background:#fff;border-radius:18px;padding:18px 16px;box-shadow:0 6px 18px rgba(90,80,66,.08);margin-bottom:14px;">
+            <p style="margin:0 0 12px;font-size:12px;font-weight:700;color:#8b857b;">내 번호</p>
+            <div style="display:flex;gap:8px;justify-content:space-between;">
+              <sc-for list="{{ entrySlots }}" as="e" hint-placeholder-count="6">
+                <button onClick="{{ e.onClick }}" style="{{ e.style }}">{{ e.n }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- number pad -->
+          <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(90,80,66,.08);margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
+              <sc-for list="{{ padCells }}" as="p" hint-placeholder-count="45">
+                <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.n }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <button onClick="{{ runCheck }}" style="width:100%;padding:17px;border:none;border-radius:16px;background:linear-gradient(180deg,#2c5a7c,#22496a);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(34,73,106,.32);font-family:inherit;">결과 확인</button>
+
+          <!-- result -->
+          <sc-if value="{{ hasCheckResult }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:18px;background:#fff;border-radius:18px;padding:22px 18px;box-shadow:0 8px 22px rgba(90,80,66,.1);animation:fadeup .4s ease;">
+              <p style="margin:0 0 2px;text-align:center;font-size:13px;font-weight:600;color:#8b857b;">{{ checkRoundLabel }} 당첨번호</p>
+              <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;margin:12px 0 18px;">
+                <sc-for list="{{ winBalls }}" as="w" hint-placeholder-count="6">
+                  <div style="{{ w.style }}">{{ w.n }}</div>
+                </sc-for>
+                <span style="font-size:20px;color:#b0a99e;font-weight:700;margin:0 2px;">+</span>
+                <div style="{{ bonusBall.style }}">{{ bonusBall.n }}</div>
+              </div>
+              <div style="text-align:center;padding:16px;border-radius:14px;background:{{ rankBg }};">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#6f6a61;">{{ matchText }}</p>
+                <p style="margin:4px 0 0;font-size:32px;font-weight:800;letter-spacing:-.02em;color:{{ rankColor }};">{{ rankText }}</p>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ TAB 3 : 통계 ============ -->
+      <sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+        <div style="padding-top:8px;">
+          <h2 style="margin:6px 0 3px;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#2a2724;">번호 통계</h2>
+          <p style="margin:0 0 18px;font-size:13px;color:#8b857b;font-weight:500;">{{ statsLabel }}</p>
+
+          <!-- hot / cold -->
+          <div style="display:flex;gap:12px;margin-bottom:18px;">
+            <div style="flex:1;background:#fff;border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(90,80,66,.08);">
+              <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#b0862f;">자주 나온 번호</p>
+              <div style="display:flex;gap:6px;">
+                <sc-for list="{{ hotBalls }}" as="h" hint-placeholder-count="3">
+                  <div style="{{ h.style }}">{{ h.n }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;background:#fff;border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(90,80,66,.08);">
+              <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#5f8ba2;">드물게 나온 번호</p>
+              <div style="display:flex;gap:6px;">
+                <sc-for list="{{ coldBalls }}" as="c" hint-placeholder-count="3">
+                  <div style="{{ c.style }}">{{ c.n }}</div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <!-- odd/even + range -->
+          <div style="background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 18px rgba(90,80,66,.08);margin-bottom:18px;">
+            <p style="margin:0 0 12px;font-size:13px;font-weight:800;color:#2a2724;">홀짝 분포</p>
+            <div style="display:flex;height:26px;border-radius:8px;overflow:hidden;margin-bottom:6px;">
+              <div style="{{ oddStyle }}">홀 {{ oddPct }}%</div>
+              <div style="{{ evenStyle }}">짝 {{ evenPct }}%</div>
+            </div>
+          </div>
+
+          <!-- frequency bars -->
+          <div style="background:#fff;border-radius:16px;padding:18px 16px;box-shadow:0 6px 18px rgba(90,80,66,.08);">
+            <p style="margin:0 0 14px;font-size:13px;font-weight:800;color:#2a2724;">번호별 출현 빈도</p>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ freqRows }}" as="f" hint-placeholder-count="45">
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <div style="{{ f.dotStyle }}">{{ f.n }}</div>
+                  <div style="flex:1;height:14px;background:#f0ede7;border-radius:7px;overflow:hidden;">
+                    <div style="{{ f.barStyle }}"></div>
+                  </div>
+                  <span style="width:26px;text-align:right;font-size:11px;font-weight:700;color:#8b857b;">{{ f.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- bottom tabs -->
+    <nav style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;background:rgba(238,241,244,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(46,54,60,.12);display:flex;padding:8px 12px 22px;z-index:20;">
+      <button onClick="{{ tabDraw }}" style="{{ navDrawStyle }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.5"></circle><path d="M8.6 11.4a3.4 3.4 0 0 1 2.8-2.1"></path></svg>
+        <span>추첨</span>
+      </button>
+      <button onClick="{{ tabCheck }}" style="{{ navCheckStyle }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 7.7-7 9-4-1.3-7-4.4-7-9V6l7-3z"></path><path d="M8.7 11.6l2.4 2.4 4.4-4.6"></path></svg>
+        <span>당첨확인</span>
+      </button>
+      <button onClick="{{ tabStats }}" style="{{ navStatsStyle }}">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="12" width="4" height="7" rx="1"></rect><rect x="10" y="5" width="4" height="14" rx="1"></rect><rect x="16" y="9" width="4" height="10" rx="1"></rect></svg>
+        <span>통계</span>
+      </button>
+    </nav>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:880}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'draw',
+    phase: 'idle',
+    fixed: [],
+    excluded: [],
+    drawn: [],
+    revealed: 0,
+    round: 1128,
+    entry: [null, null, null, null, null, null],
+    activeSlot: 0,
+    checkResult: null,
+    copied: false,
+  };
+
+  // ---- data ----
+  rounds = [
+    { round: 1128, date: '2024.06.29', nums: [5, 12, 24, 29, 38, 44], bonus: 17 },
+    { round: 1127, date: '2024.06.22', nums: [3, 9, 27, 30, 41, 45], bonus: 11 },
+    { round: 1126, date: '2024.06.15', nums: [2, 15, 19, 23, 33, 40], bonus: 8 },
+    { round: 1125, date: '2024.06.08', nums: [7, 11, 22, 28, 36, 42], bonus: 25 },
+    { round: 1124, date: '2024.06.01', nums: [1, 14, 18, 26, 31, 39], bonus: 20 },
+  ];
+  freq = [61,58,72,55,68,63,70,54,66,59,62,57,64,52,71,60,56,69,73,58,65,61,67,53,59,74,60,66,55,62,58,70,63,57,64,51,68,60,72,56,61,54,67,59,49];
+
+  ballBg(n) {
+    if (n <= 10) return '#f4c02e';
+    if (n <= 20) return '#3faee0';
+    if (n <= 30) return '#f16a6a';
+    if (n <= 40) return '#9a938a';
+    return '#9fc93c';
+  }
+  ballStyle(n, size, delay) {
+    const s = size || 42;
+    return `flex:0 0 auto;width:${s}px;height:${s}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(s*0.42)}px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28);background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.6),rgba(255,255,255,0) 46%),${this.ballBg(n)};box-shadow:0 4px 10px rgba(90,80,66,.24),inset 0 -3px 6px rgba(0,0,0,.15);` + (delay!=null?`animation:ballpop .55s cubic-bezier(.2,1.3,.5,1) both;animation-delay:${delay}s;`:'');
+  }
+
+  // ---- draw flow ----
+  goPicker = () => this.setState({ phase: 'picker', drawn: [], revealed: 0, copied: false });
+  resetPicks = () => this.setState({ fixed: [], excluded: [] });
+  cycle = (n) => {
+    let { fixed, excluded } = this.state;
+    if (fixed.includes(n)) {
+      fixed = fixed.filter(x => x !== n);
+      excluded = [...excluded, n];
+    } else if (excluded.includes(n)) {
+      excluded = excluded.filter(x => x !== n);
+    } else {
+      if (fixed.length >= 6) return;
+      fixed = [...fixed, n];
+    }
+    this.setState({ fixed, excluded });
+  };
+  runDraw = () => {
+    const excl = new Set(this.state.excluded);
+    let fixed = this.state.fixed.filter(n => !excl.has(n)).slice(0, 6);
+    const pool = [];
+    for (let i = 1; i <= 45; i++) if (!excl.has(i) && !fixed.includes(i)) pool.push(i);
+    const need = 6 - fixed.length;
+    const picks = [];
+    for (let i = 0; i < need; i++) picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    const result = [...fixed, ...picks].sort((a, b) => a - b);
+    this.setState({ phase: 'drawing', drawn: result, revealed: 0, copied: false });
+    this._timers = [];
+    const spin = 1500, gap = 780;
+    for (let i = 1; i <= 6; i++) {
+      this._timers.push(setTimeout(() => this.setState({ revealed: i }), spin + gap * (i - 1)));
+    }
+  };
+  componentWillUnmount() { (this._timers || []).forEach(clearTimeout); }
+  copyNums = () => {
+    const txt = this.state.drawn.join(', ');
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+    this.setState({ copied: true });
+    setTimeout(() => this.setState({ copied: false }), 1800);
+  };
+  goBuy = () => window.open('https://dhlottery.co.kr/', '_blank');
+
+  // ---- check flow ----
+  pickSlot = (i) => this.setState({ activeSlot: i });
+  padPick = (n) => {
+    const entry = this.state.entry.slice();
+    if (entry.includes(n)) { entry[entry.indexOf(n)] = null; this.setState({ entry }); return; }
+    let i = this.state.activeSlot;
+    if (entry[i] != null) { const e = entry.indexOf(null); if (e === -1) return; i = e; }
+    entry[i] = n;
+    const next = entry.indexOf(null);
+    this.setState({ entry, activeSlot: next === -1 ? i : next, checkResult: null });
+  };
+  runCheck = () => {
+    const entry = this.state.entry.filter(x => x != null);
+    if (entry.length < 6) return;
+    const r = this.rounds.find(x => x.round === this.state.round);
+    const set = new Set(r.nums);
+    const matches = entry.filter(n => set.has(n)).length;
+    const bonusHit = entry.includes(r.bonus);
+    let rank = '낙첨';
+    if (matches === 6) rank = '1등';
+    else if (matches === 5 && bonusHit) rank = '2등';
+    else if (matches === 5) rank = '3등';
+    else if (matches === 4) rank = '4등';
+    else if (matches === 3) rank = '5등';
+    this.setState({ checkResult: { matches, bonusHit, rank } });
+  };
+
+  setTab = (t) => this.setState({ tab: t });
+  setRound = (r) => this.setState({ round: r, checkResult: null });
+
+  renderVals() {
+    const S = this.state;
+    const rv = {
+      isDraw: S.tab === 'draw', isCheck: S.tab === 'check', isStats: S.tab === 'stats',
+      roundLabel: `제 ${this.rounds[0].round}회`,
+      showIdle: S.tab === 'draw' && S.phase === 'idle',
+      showPicker: S.tab === 'draw' && S.phase === 'picker',
+      showDrawing: S.tab === 'draw' && S.phase === 'drawing',
+      goPicker: this.goPicker, resetPicks: this.resetPicks, runDraw: this.runDraw,
+      fixedCount: S.fixed.length, excludedCount: S.excluded.length,
+      copyNums: this.copyNums, goBuy: this.goBuy,
+      copyLabel: S.copied ? '복사되었습니다 ✓' : '번호 복사',
+    };
+
+    // picker grid
+    rv.cells = [];
+    for (let n = 1; n <= 45; n++) {
+      const isF = S.fixed.includes(n), isE = S.excluded.includes(n);
+      let st = 'aspect-ratio:1;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .12s;border:1.5px solid ';
+      if (isF) st += '#24506e;background:#24506e;color:#fff;box-shadow:0 4px 10px rgba(36,80,110,.3);';
+      else if (isE) st += 'transparent;border-style:dashed;border-color:#c9b483;background:#efe7d6;color:#b09a5f;text-decoration:line-through;';
+      else st += '#e0d9cf;background:#fff;color:#3a352f;';
+      rv.cells.push({ n, style: st, onClick: () => this.cycle(n) });
+    }
+
+    // drawing
+    const done = S.revealed >= 6;
+    rv.drawDone = done;
+    rv.drumLabel = done ? 'DONE' : 'DRAW';
+    rv.drumStyle = `position:absolute;inset:0;` + (done ? '' : 'animation:drumspin 1.1s linear infinite;');
+    rv.drumBalls = [];
+    const drumColors = [3, 14, 22, 34, 42, 7, 18, 27, 39, 45];
+    for (let i = 0; i < 10; i++) {
+      const ang = (i / 10) * Math.PI * 2, R = 72;
+      const x = 115 + Math.cos(ang) * R - 13, y = 115 + Math.sin(ang) * R - 13;
+      rv.drumBalls.push({ style: `position:absolute;left:${x}px;top:${y}px;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.6),rgba(255,255,255,0) 46%),${this.ballBg(drumColors[i])};box-shadow:0 2px 5px rgba(0,0,0,.2);` + (done ? '' : `animation:jiggle .5s ease-in-out infinite;animation-delay:${i*0.06}s;`) });
+    }
+    rv.resultSlots = [];
+    for (let i = 0; i < 6; i++) {
+      if (i < S.revealed) rv.resultSlots.push({ n: S.drawn[i], style: this.ballStyle(S.drawn[i], 50, 0) });
+      else rv.resultSlots.push({ n: '', style: 'flex:0 0 auto;width:50px;height:50px;border-radius:50%;background:#e2ddd4;box-shadow:inset 0 2px 5px rgba(120,110,96,.18);' });
+    }
+
+    // tabs
+    const nav = (on) => `flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 0;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:-.01em;color:${on ? '#24506e' : '#9aa1a8'};`;
+    rv.tabDraw = () => this.setTab('draw');
+    rv.tabCheck = () => this.setTab('check');
+    rv.tabStats = () => this.setTab('stats');
+    rv.navDrawStyle = nav(rv.isDraw);
+    rv.navCheckStyle = nav(rv.isCheck);
+    rv.navStatsStyle = nav(rv.isStats);
+
+    // ---- check ----
+    const cur = this.rounds.find(r => r.round === S.round) || this.rounds[0];
+    rv.roundChips = this.rounds.map(r => ({ label: `${r.round}회`, onClick: () => this.setRound(r.round),
+      style: `flex:0 0 auto;padding:9px 15px;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ${r.round===S.round?'#24506e':'#d8d1c7'};background:${r.round===S.round?'#24506e':'#fff'};color:${r.round===S.round?'#fff':'#6f6a61'};` }));
+    rv.entrySlots = S.entry.map((n, i) => {
+      const active = i === S.activeSlot;
+      if (n != null) return { n, onClick: () => this.pickSlot(i), style: this.ballStyle(n, 44) + 'cursor:pointer;border:none;padding:0;' };
+      return { n: '', onClick: () => this.pickSlot(i), style: `width:44px;height:44px;border-radius:50%;cursor:pointer;font-family:inherit;border:2px ${active?'solid #24506e':'dashed #cfc8bd'};background:${active?'#eef3f7':'#f5f2ec'};` };
+    });
+    rv.padCells = [];
+    for (let n = 1; n <= 45; n++) {
+      const sel = S.entry.includes(n);
+      rv.padCells.push({ n, onClick: () => this.padPick(n),
+        style: `aspect-ratio:1;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid ${sel?this.ballBg(n):'#eae4db'};background:${sel?this.ballBg(n):'#faf8f4'};color:${sel?'#fff':'#6f6a61'};` + (sel?'text-shadow:0 1px 1px rgba(0,0,0,.2);':'') });
+    }
+    rv.runCheck = this.runCheck;
+    rv.hasCheckResult = !!S.checkResult;
+    rv.checkRoundLabel = `${cur.round}회`;
+    rv.winBalls = cur.nums.map(n => ({ n, style: this.ballStyle(n, 38) }));
+    rv.bonusBall = { n: cur.bonus, style: this.ballStyle(cur.bonus, 38) };
+    if (S.checkResult) {
+      const cr = S.checkResult;
+      rv.matchText = `${cr.matches}개 일치` + (cr.bonusHit ? ' + 보너스' : '');
+      rv.rankText = cr.rank;
+      const win = cr.rank !== '낙첨';
+      rv.rankColor = win ? '#24506e' : '#8b857b';
+      rv.rankBg = win ? '#eef3f7' : '#f0ede7';
+    } else { rv.matchText = ''; rv.rankText = ''; rv.rankColor = '#8b857b'; rv.rankBg = '#f0ede7'; }
+
+    // ---- stats ----
+    rv.statsLabel = `제 1~${this.rounds[0].round}회차 누적 기준`;
+    const idx = this.freq.map((c, i) => ({ n: i + 1, c }));
+    const sorted = [...idx].sort((a, b) => b.c - a.c);
+    rv.hotBalls = sorted.slice(0, 3).map(o => ({ n: o.n, style: this.ballStyle(o.n, 38) }));
+    rv.coldBalls = sorted.slice(-3).reverse().map(o => ({ n: o.n, style: this.ballStyle(o.n, 38) }));
+    const max = Math.max(...this.freq), min = Math.min(...this.freq);
+    rv.freqRows = idx.map(o => ({
+      n: o.n, count: o.c,
+      dotStyle: `flex:0 0 auto;width:26px;height:26px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 46%),${this.ballBg(o.n)};`,
+      barStyle: `height:100%;width:${Math.round(((o.c - min) / (max - min)) * 88 + 12)}%;border-radius:7px;background:${this.ballBg(o.n)};opacity:.85;`,
+    }));
+    let odd = 0, ev = 0;
+    idx.forEach(o => { if (o.n % 2) odd += o.c; else ev += o.c; });
+    const tot = odd + ev;
+    rv.oddPct = Math.round((odd / tot) * 100);
+    rv.evenPct = 100 - rv.oddPct;
+    rv.oddStyle = `width:${rv.oddPct}%;background:#24506e;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;`;
+    rv.evenStyle = `width:${rv.evenPct}%;background:#b0862f;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;`;
+
+    return rv;
+  }
+}
+</script>
+</body>
+</html>

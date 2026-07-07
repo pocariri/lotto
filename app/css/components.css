@@ -1,0 +1,67 @@
+/* components.css — 여러 화면이 같이 쓰는 부품: 공, 버튼, 카드, 제목 */
+
+/* ---- 공 (로또 볼) ---- */
+.ball {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-weight: 800; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 46%), var(--ball-color);
+  box-shadow: 0 4px 10px rgba(90, 80, 66, .24), inset 0 -3px 6px rgba(0, 0, 0, .15);
+}
+
+/* 색 구간 (숫자 → 클래스는 js/lottery.js의 ballClass가 정해줌) */
+.ball--g1 { --ball-color: var(--ball-yellow); }
+.ball--g2 { --ball-color: var(--ball-blue); }
+.ball--g3 { --ball-color: var(--ball-red); }
+.ball--g4 { --ball-color: var(--ball-gray); }
+.ball--g5 { --ball-color: var(--ball-green); }
+
+/* 크기 (글씨는 지름의 42% — 디자인 공식) */
+.ball--50 { width: 50px; height: 50px; font-size: 21px; }
+.ball--44 { width: 44px; height: 44px; font-size: 18px; }
+.ball--38 { width: 38px; height: 38px; font-size: 16px; }
+
+/* 등장 연출 */
+.ball--pop { animation: ballpop .55s cubic-bezier(.2, 1.3, .5, 1) both; }
+
+/* ---- 화면 제목 ---- */
+.screen-title { margin: 6px 0 3px; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.screen-sub { margin: 0 0 16px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.screen-sub .em-fix { color: var(--brand); }
+.screen-sub .em-exc { color: var(--gold); }
+
+/* ---- 버튼 ---- */
+.btn-primary {
+  display: block; width: 100%; padding: 16px;
+  border: none; border-radius: 15px;
+  background: var(--brand-grad); color: #fff;
+  font-size: 16px; font-weight: 800; letter-spacing: -.01em;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(34, 73, 106, .34);
+}
+.btn-primary--hero { margin-top: 26px; padding: 18px; border-radius: 18px; font-size: 18px; box-shadow: 0 10px 24px rgba(34, 73, 106, .36); }
+.btn-primary--check { padding: 17px; border-radius: 16px; box-shadow: 0 8px 20px rgba(34, 73, 106, .32); }
+.btn-primary--link { text-align: center; text-decoration: none; box-shadow: 0 8px 20px rgba(34, 73, 106, .32); }
+
+.btn-outline {
+  padding: 16px 20px;
+  border: 1.5px solid #cfc8bd; border-radius: 15px;
+  background: transparent; color: var(--muted-2);
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.btn-outline--copy { width: 100%; padding: 16px; background: #fff; color: var(--ink); font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+
+.btn-ghost {
+  width: 100%; padding: 14px; margin-top: 6px;
+  border: none; background: transparent;
+  color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer;
+}
+
+/* ---- 흰 카드 ---- */
+.card { background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(90, 80, 66, .08); }
+
+/* ---- 로딩/오류 상태 문구 ---- */
+.status-note { margin: 14px 0; font-size: 13px; font-weight: 600; color: var(--muted); text-align: center; }
+.status-note--error { color: var(--gold); font-weight: 700; }
