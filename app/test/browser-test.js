@@ -110,7 +110,28 @@ async function main() {
   await evaluate(cellClick(7));
   await evaluate(cellClick(14));
   await evaluate(cellClick(30)); await evaluate(cellClick(30)); // 고정→제외
+
+  // ---- 추첨 모드 UI (Phase 4) ----
+  const modeUi = await evaluate(`({
+    labels: ['mode-random','mode-hot','mode-cold'].map(function(id){ return document.getElementById(id).textContent; }),
+    randomActive: document.getElementById('mode-random').classList.contains('is-active'),
+    strengthHidden: document.getElementById('mode-strength').hidden,
+    note: document.querySelector('.mode-note').textContent })`);
+  assert('모드 칩 3개, 기본은 완전 랜덤, 강도 숨김',
+    JSON.stringify(modeUi.labels) === JSON.stringify(['완전 랜덤', '핫', '콜드']) &&
+    modeUi.randomActive && modeUi.strengthHidden, JSON.stringify(modeUi));
+  assert('정직 안내 문구 표시', /과거 빈도는 다음 추첨에 영향을 주지 않습니다/.test(modeUi.note), modeUi.note);
+
+  await evaluate(`document.getElementById('mode-hot').click()`);
+  const hotUi = await evaluate(`({
+    active: document.getElementById('mode-hot').classList.contains('is-active'),
+    strengthHidden: document.getElementById('mode-strength').hidden,
+    desc: document.getElementById('mode-desc').textContent })`);
+  assert('핫 선택 → 강도 버튼 표시 + 설명 변경',
+    hotUi.active && !hotUi.strengthHidden && /많이 나온 번호/.test(hotUi.desc), JSON.stringify(hotUi));
+  await evaluate(`document.getElementById('strength-strong').click()`);
   await shot('02-draw-picker.png');
+  // 이하 추첨은 핫·세게 모드로 진행 — 가중 추첨 경로를 실데이터로 검증
   await evaluate(`document.getElementById('run-draw-btn').click()`);
   await sleep(6500); // 1500 + 780*5 = 5400ms 완료 후 여유
   const drawResult = await evaluate(`(function(){
@@ -119,9 +140,10 @@ async function main() {
       hasFixed: nums.indexOf(7) !== -1 && nums.indexOf(14) !== -1, noExcluded: nums.indexOf(30) === -1,
       actionsShown: !document.getElementById('draw-actions').hidden };
   })()`);
-  assert('추첨: 6개/오름차순/고정포함/제외반영/버튼표시',
+  assert('추첨(핫·세게): 6개/오름차순/고정포함/제외반영/버튼표시',
     drawResult.nums.length === 6 && drawResult.sorted && drawResult.hasFixed && drawResult.noExcluded && drawResult.actionsShown,
     JSON.stringify(drawResult));
+  assert('통계 정상 수신 → 폴백 안내 숨김', await evaluate(`document.getElementById('draw-fallback').hidden`) === true);
   await shot('03-draw-result.png');
 
   // ---- 상단 라벨 (실데이터) ----
@@ -211,6 +233,33 @@ async function main() {
   assert('(0명 검증) "1등 당첨자 없음" 표시',
     round1.firstPrize.winners === 0 ? zeroPrize === '이 회차는 1등 당첨자 없음' : true, zeroPrize);
   await shot('06-check-no-winner.png');
+
+  // ---- 통계 실패 폴백 (핫/콜드인데 /api/stats가 죽어 있으면 완전 랜덤으로 뽑고 안내) ----
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `
+    (function () {
+      var of = window.fetch;
+      window.fetch = function (u, o) {
+        if (typeof u === 'string' && u.indexOf('/api/stats') === 0)
+          return Promise.reject(new TypeError('통계 차단(테스트)'));
+        return of.call(this, u, o);
+      };
+    })();` });
+  await send('Page.navigate', { url: BASE + '/index.html' });
+  await evaluate(`void 0`);
+  await sleep(800);
+  await evaluate(`document.getElementById('go-picker-btn').click()`);
+  await sleep(300);
+  await evaluate(`document.getElementById('mode-cold').click()`);
+  await evaluate(`document.getElementById('run-draw-btn').click()`);
+  await sleep(6800);
+  const fb = await evaluate(`(function(){
+    var nums = Array.from(document.querySelectorAll('#result-row .ball')).map(function(b){ return parseInt(b.textContent, 10); });
+    return { count: nums.length, fallbackShown: !document.getElementById('draw-fallback').hidden,
+      text: document.getElementById('draw-fallback').textContent };
+  })()`);
+  assert('통계 실패 → 완전 랜덤 6개 + 안내 표시',
+    fb.count === 6 && fb.fallbackShown && /완전 랜덤으로 뽑았어요/.test(fb.text), JSON.stringify(fb));
+  await shot('07-draw-fallback.png');
 
   console.log('콘솔 오류:', consoleErrors.length ? consoleErrors : '없음');
   if (consoleErrors.length) failures++;

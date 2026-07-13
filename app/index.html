@@ -58,6 +58,20 @@
             <span class="item"><span class="legend-swatch legend-swatch--excluded" aria-hidden="true"></span><span id="excluded-count">제외 0</span></span>
           </div>
           <div class="picker-grid" id="picker-grid"></div>
+          <div class="mode-box">
+            <p class="mode-label">추첨 모드</p>
+            <div class="mode-chips" role="group" aria-label="추첨 모드 선택">
+              <button type="button" id="mode-random" class="chip chip--mode is-active" aria-pressed="true">완전 랜덤</button>
+              <button type="button" id="mode-hot" class="chip chip--mode" aria-pressed="false">핫</button>
+              <button type="button" id="mode-cold" class="chip chip--mode" aria-pressed="false">콜드</button>
+            </div>
+            <div class="mode-strength" id="mode-strength" role="group" aria-label="가중치 강도" hidden>
+              <button type="button" id="strength-weak" class="chip chip--sm is-active" aria-pressed="true">약하게</button>
+              <button type="button" id="strength-strong" class="chip chip--sm" aria-pressed="false">세게</button>
+            </div>
+            <p class="mode-desc" id="mode-desc">모든 번호가 똑같은 확률이에요</p>
+            <p class="mode-note">과거 빈도는 다음 추첨에 영향을 주지 않습니다. 번호를 고르는 재미를 위한 기능이에요.</p>
+          </div>
           <p class="picker-notice" id="picker-notice" role="alert" hidden></p>
           <div class="picker-actions">
             <button type="button" id="reset-btn" class="btn-outline">초기화</button>
@@ -81,6 +95,7 @@
             <div class="result-slot"></div>
           </div>
           <div class="draw-actions" id="draw-actions" hidden>
+            <p class="draw-fallback" id="draw-fallback" role="status" hidden>통계를 불러오지 못해 이번엔 완전 랜덤으로 뽑았어요</p>
             <p class="tagline">행운을 담은 6개의 번호</p>
             <button type="button" id="copy-btn" class="btn-outline btn-outline--copy">번호 복사</button>
             <a id="buy-btn" class="btn-primary btn-primary--link" href="https://dhlottery.co.kr/" target="_blank" rel="noopener noreferrer">동행복권에서 구매하기 →</a>

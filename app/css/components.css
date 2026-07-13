@@ -59,6 +59,14 @@
   color: var(--muted); font-size: 14px; font-weight: 700; cursor: pointer;
 }
 
+/* ---- 선택 칩 (당첨확인 회차, 추첨 모드가 같이 씀) ---- */
+.chip {
+  flex: 0 0 auto; padding: 9px 15px;
+  border-radius: 11px; font-size: 14px; font-weight: 800; cursor: pointer;
+  border: 1.5px solid #d8d1c7; background: #fff; color: var(--muted-2);
+}
+.chip.is-active { border-color: var(--brand); background: var(--brand); color: #fff; }
+
 /* ---- 흰 카드 ---- */
 .card { background: #fff; border-radius: 18px; box-shadow: 0 6px 18px rgba(90, 80, 66, .08); }
 

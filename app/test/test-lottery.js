@@ -91,5 +91,109 @@ assert('공 색 구간', L.ballGroup(1) === 'g1' && L.ballGroup(10) === 'g1' &&
   L.ballGroup(31) === 'g4' && L.ballGroup(40) === 'g4' &&
   L.ballGroup(41) === 'g5' && L.ballGroup(45) === 'g5');
 
+// ---- Phase 4: 추첨 모드 (핫/콜드 가중 추첨) ----
+// ticketWeights(frequency, mode, strength) → 길이 46 배열(weights[n] = 번호 n의 응모권 수)
+//   기본 1장 + 빈도 보너스. weak: 최대 2장(2배), strong: 최대 5장(5배). 바닥 1장 보장.
+// drawWeighted(fixed, excluded, weights) → draw와 같은 규칙 + 응모권 비례 추첨.
+
+function makeFreq(countFn) {
+  const arr = [];
+  for (let n = 1; n <= 45; n++) arr.push({ number: n, count: countFn(n) });
+  return arr;
+}
+function tryBlock(name, fn) {
+  try { fn(); } catch (e) { assert(name + ' (예외: ' + e.message + ')', false); }
+}
+const RISING = makeFreq(n => 100 + n); // 번호가 클수록 많이 나온 가상 빈도
+
+// 11) 핫 모드 응모권: 최다 번호가 약하게 2장 / 세게 5장, 최소 번호는 1장, 단조 증가
+tryBlock('핫 모드 응모권', () => {
+  const weak = L.ticketWeights(RISING, 'hot', 'weak');
+  const strong = L.ticketWeights(RISING, 'hot', 'strong');
+  assert('핫·약하게: 최다=2장, 최소=1장',
+    Math.abs(weak[45] - 2) < 1e-9 && Math.abs(weak[1] - 1) < 1e-9);
+  assert('핫·세게: 최다=5장, 최소=1장',
+    Math.abs(strong[45] - 5) < 1e-9 && Math.abs(strong[1] - 1) < 1e-9);
+  let mono = true;
+  for (let n = 2; n <= 45; n++) if (strong[n] < strong[n - 1]) mono = false;
+  assert('핫: 빈도 높을수록 응모권 많음(단조)', mono);
+});
+
+// 12) 콜드 모드 응모권: 핫의 정반대 — 최소 빈도 번호가 보너스를 받는다
+tryBlock('콜드 모드 응모권', () => {
+  const weak = L.ticketWeights(RISING, 'cold', 'weak');
+  const strong = L.ticketWeights(RISING, 'cold', 'strong');
+  assert('콜드·약하게: 최소빈도=2장, 최다빈도=1장',
+    Math.abs(weak[1] - 2) < 1e-9 && Math.abs(weak[45] - 1) < 1e-9);
+  assert('콜드·세게: 최소빈도=5장, 최다빈도=1장',
+    Math.abs(strong[1] - 5) < 1e-9 && Math.abs(strong[45] - 1) < 1e-9);
+  // 핫/콜드 대칭: 번호 n의 콜드 응모권 == 번호 46-n의 핫 응모권 (빈도가 선형이므로)
+  const hot = L.ticketWeights(RISING, 'hot', 'strong');
+  let sym = true;
+  for (let n = 1; n <= 45; n++) if (Math.abs(strong[n] - hot[46 - n]) > 1e-9) sym = false;
+  assert('핫/콜드 대칭', sym);
+});
+
+// 13) frequency 배열 순서가 섞여 있어도 number 기준으로 계산
+tryBlock('빈도 배열 순서 무관', () => {
+  const shuffled = RISING.slice().reverse();
+  const w = L.ticketWeights(shuffled, 'hot', 'strong');
+  assert('섞인 배열도 number 기준', Math.abs(w[45] - 5) < 1e-9 && Math.abs(w[1] - 1) < 1e-9);
+});
+
+// 14) 빈도가 전부 같으면 전부 1장 (완전 랜덤과 동일) + 바닥/천장 보장
+tryBlock('동일 빈도·바닥 보장', () => {
+  const flat = L.ticketWeights(makeFreq(() => 150), 'hot', 'strong');
+  let allOne = true;
+  for (let n = 1; n <= 45; n++) if (Math.abs(flat[n] - 1) > 1e-9) allOne = false;
+  assert('전부 같은 빈도 → 전부 1장', allOne);
+  const rand = L.ticketWeights(makeFreq(n => 100 + ((n * 37) % 45)), 'cold', 'strong');
+  let bounded = true;
+  for (let n = 1; n <= 45; n++) if (rand[n] < 1 - 1e-9 || rand[n] > 5 + 1e-9) bounded = false;
+  assert('모든 번호 1장 이상 5장 이하', bounded);
+});
+
+// 15) 가중 뽑기 기본 성질: 6개/중복없음/오름차순/범위 (500회)
+tryBlock('가중 뽑기 기본 성질', () => {
+  const w = L.ticketWeights(RISING, 'hot', 'strong');
+  for (let t = 0; t < 500; t++) {
+    const r = L.drawWeighted([], [], w);
+    const ok = r.length === 6 && new Set(r).size === 6 &&
+      r.every((n, i) => n >= 1 && n <= 45 && (i === 0 || r[i - 1] < n));
+    if (!ok) { assert('가중 뽑기 #' + t + ' → ' + r, false); return; }
+  }
+  assert('가중 뽑기 500회 (중복없음/6개/오름차순/범위)', true);
+});
+
+// 16) 가중 뽑기도 고정 포함·제외 반영
+tryBlock('가중 뽑기 고정/제외', () => {
+  const w = L.ticketWeights(RISING, 'cold', 'strong');
+  const excl = [];
+  for (let i = 1; i <= 30; i++) excl.push(i);
+  for (let t = 0; t < 200; t++) {
+    const r = L.drawWeighted([31, 45], excl, w);
+    if (!(r.includes(31) && r.includes(45) && r.every(n => n >= 31))) {
+      assert('가중 고정+제외 실패: ' + r, false); return;
+    }
+  }
+  assert('가중 뽑기 고정 2 + 제외 30 (200회)', true);
+});
+
+// 17) 성향과 바닥 확률 (통계적 — 여유 큰 기준):
+//     세게 핫에서 최다 빈도 번호(45)는 최소 빈도 번호(1)보다 훨씬 자주 나오되, 1번도 꾸준히 나온다
+tryBlock('성향·바닥 통계 검증', () => {
+  const w = L.ticketWeights(RISING, 'hot', 'strong');
+  let c1 = 0, c45 = 0;
+  const N = 3000;
+  for (let t = 0; t < N; t++) {
+    const r = L.drawWeighted([], [], w);
+    if (r.includes(1)) c1++;
+    if (r.includes(45)) c45++;
+  }
+  // 기대값: 1번 ≈ 130회(4.4%), 45번 ≈ 660회(22%) — 기준은 그 중간에 널널하게
+  assert('세게 핫: 45번이 1번보다 2배 이상 (' + c45 + ' vs ' + c1 + ')', c45 > c1 * 2);
+  assert('세게 핫에서도 1번이 고착 없이 계속 나옴 (' + c1 + '회)', c1 > 20);
+});
+
 console.log(failures === 0 ? '\n== 전부 통과 ==' : '\n== 실패 ' + failures + '건 ==');
 process.exit(failures === 0 ? 0 : 1);

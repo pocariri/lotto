@@ -58,6 +58,21 @@
   text-decoration: line-through;
 }
 
+/* ---- 추첨 모드 (완전 랜덤 / 핫 / 콜드) ---- */
+.mode-box { margin-top: 18px; }
+.mode-label { margin: 0 0 9px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.mode-chips { display: flex; gap: 8px; }
+.chip--mode { flex: 1; padding: 10px 0; text-align: center; }
+.mode-strength { display: flex; gap: 8px; margin-top: 8px; }
+.mode-strength[hidden] { display: none; }
+.chip--sm { padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 700; }
+.mode-desc { margin: 10px 0 0; font-size: 12px; font-weight: 600; color: var(--muted-2); }
+.mode-note { margin: 4px 0 0; font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* 통계를 못 받아 완전 랜덤으로 뽑았을 때 안내 (결과 화면) */
+.draw-fallback { margin: 14px 0 -6px; text-align: center; font-size: 12px; font-weight: 700; color: var(--gold); }
+.draw-fallback[hidden] { display: none; }
+
 /* 못 뽑을 때 안내 문구 */
 .picker-notice { margin: 12px 0 0; font-size: 13px; font-weight: 700; color: var(--gold); text-align: center; }
 

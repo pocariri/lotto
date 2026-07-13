@@ -69,6 +69,59 @@ Lotto.logic = {
     return picks.sort(function (a, b) { return a - b; });
   },
 
+  // ---- 추첨 모드 (핫/콜드) ----
+  // 모든 번호가 기본 응모권 1장을 갖고, 모드에 따라 보너스를 얹는다.
+  // 기본 1장은 절대 안 사라지므로 어떤 강도에서도 모든 번호가 최소 확률을 유지한다.
+
+  // 강도 → 보너스 응모권 최대 장수 (weak: 최대 2배, strong: 최대 5배 차이)
+  STRENGTH_BONUS: { weak: 1, strong: 4 },
+
+  // 통계 빈도 → 응모권 배열. frequency는 [{number, count} x45] (순서 무관, number 기준).
+  // 반환: 길이 46 배열, weights[n] = 번호 n의 응모권 수 (0번 인덱스는 안 씀).
+  // mode 'hot'(많이 나온 번호에 보너스) | 'cold'(적게 나온 번호에 보너스)
+  ticketWeights(frequency, mode, strength) {
+    var bonus = this.STRENGTH_BONUS[strength] || this.STRENGTH_BONUS.weak;
+    var counts = frequency.map(function (o) { return o.count; });
+    var max = Math.max.apply(null, counts);
+    var min = Math.min.apply(null, counts);
+    var span = max - min;
+
+    var weights = new Array(this.MAX + 1).fill(1);
+    weights[0] = 0;
+    if (span === 0) return weights; // 빈도가 전부 같으면 완전 랜덤과 동일
+
+    frequency.forEach(function (o) {
+      var t = (o.count - min) / span;            // 0(최소 빈도) ~ 1(최다 빈도)
+      if (mode === 'cold') t = 1 - t;            // 콜드는 정반대
+      weights[o.number] = 1 + bonus * t;
+    });
+    return weights;
+  },
+
+  // 응모권 비례 뽑기 — draw와 같은 규칙(고정 포함, 제외 제거, 오름차순 6개).
+  // 반드시 validate 통과 후에 부를 것.
+  drawWeighted(fixed, excluded, weights) {
+    var excl = new Set(excluded);
+    var base = fixed.filter(function (n) { return !excl.has(n); }).slice(0, this.PICK);
+    var pool = [];
+    for (var i = this.MIN; i <= this.MAX; i++) {
+      if (!excl.has(i) && base.indexOf(i) === -1) pool.push(i);
+    }
+    var picks = base.slice();
+    while (picks.length < this.PICK) {
+      var total = 0;
+      for (var j = 0; j < pool.length; j++) total += weights[pool[j]];
+      var r = Math.random() * total;
+      var idx = 0;
+      for (var k = 0; k < pool.length; k++) {
+        r -= weights[pool[k]];
+        if (r < 0) { idx = k; break; }
+      }
+      picks.push(pool.splice(idx, 1)[0]);
+    }
+    return picks.sort(function (a, b) { return a - b; });
+  },
+
   // 맞은 개수(+보너스) → 등수
   rank(matches, bonusHit) {
     if (matches === 6) return '1등';
