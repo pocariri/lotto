@@ -41,6 +41,16 @@
 }
 .add-game-btn:disabled { opacity: .45; cursor: default; }
 
+/* 440px보다 좁은 실제 폰(360/375/390 등)에서 게임 줄이 카드 밖으로 넘치지 않게.
+   당첨확인 탭의 게임 줄에만 적용 — 다른 탭엔 영향 없음. */
+@media (max-width: 419px) {
+  .game-row { gap: 6px; padding: 6px; }
+  .entry-row { gap: 4px; }
+  .game-row .slot { width: 32px; height: 32px; }
+  .game-row .ball--38 { width: 32px; height: 32px; font-size: 13px; }
+  .game-del { width: 24px; height: 24px; }
+}
+
 /* QR 버튼 (회차 칩 아래) */
 .btn-outline--qr { width: 100%; padding: 13px; margin-bottom: 14px; background: #fff; color: var(--ink); font-size: 14px; }
 

@@ -230,6 +230,18 @@ async function main() {
   assert('다게임 요약: 2게임 중 1등 1개', /2게임 중 1등 1개/.test(multi.summary), multi.summary);
   await shot('08-check-multi.png');
 
+  // ---- 360px 폭 실제 폰에서 게임 줄이 카드 밖으로 넘치지 않는지 (좁은 폰 레이아웃 회귀 방지) ----
+  await send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 2, mobile: true });
+  const overflow360 = await evaluate(`(function(){
+    var card = document.querySelector('.entry-card');
+    var rows = document.querySelectorAll('#games-list .game-row');
+    var bad = 0;
+    rows.forEach(function(r){ if (r.scrollWidth > card.clientWidth) bad++; });
+    return { bad: bad, cardW: card.clientWidth };
+  })()`);
+  assert('360px 폭에서 게임 줄 넘침 없음', overflow360.bad === 0, JSON.stringify(overflow360));
+  await send('Emulation.setDeviceMetricsOverride', { width: 440, height: 900, deviceScaleFactor: 2, mobile: true });
+
   // ---- 게임 추가 한도(5)와 삭제 ----
   await evaluate(`document.getElementById('add-game-btn').click()`); // 3
   await evaluate(`document.getElementById('add-game-btn').click()`); // 4
@@ -304,17 +316,33 @@ async function main() {
     oldView.firstChip === oldRound.round + '회' && oldView.firstActive &&
     oldView.chipCount === 6 && oldView.rows === 1 && /1등/.test(oldView.rankA), JSON.stringify(oldView));
 
+  // 아래 두 실패 케이스(추첨 전/로또 아님)에서 입력칸을 안 건드리는지 검증하려고 지금 상태를 미리 담아둔다
+  const gamesSnapshot = () => evaluate(`(function(){
+    var rows = document.querySelectorAll('#games-list .game-row');
+    var balls = Array.from(document.querySelectorAll('#games-list .entry-ball')).map(function(b){ return b.textContent; }).join(',');
+    return { rows: rows.length, balls: balls };
+  })()`);
+  const gamesBeforeFail = await gamesSnapshot();
+
   // (2) 아직 추첨 전 회차 QR → 안내 문구
   await uploadQr(futurePath);
   const futureNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
   assert('추첨 전 회차 QR 안내',
     new RegExp('이 용지는 ' + (latest.round + 1) + '회예요').test(futureNotice || '') &&
     /토요일 추첨 후/.test(futureNotice || ''), futureNotice);
+  const gamesAfterFuture = await gamesSnapshot();
+  assert('추첨 전 QR: 입력 보존',
+    JSON.stringify(gamesAfterFuture) === JSON.stringify(gamesBeforeFail),
+    JSON.stringify({ before: gamesBeforeFail, after: gamesAfterFuture }));
 
   // (3) 로또가 아닌 QR → 안내 문구
   await uploadQr(badPath);
   const badNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
   assert('로또 아닌 QR 안내', /로또 용지의 QR 코드를 찾지 못했어요/.test(badNotice || ''), badNotice);
+  const gamesAfterBad = await gamesSnapshot();
+  assert('로또 아닌 QR: 입력 보존',
+    JSON.stringify(gamesAfterBad) === JSON.stringify(gamesBeforeFail),
+    JSON.stringify({ before: gamesBeforeFail, after: gamesAfterBad }));
 
   // (4) 오버레이 닫기 버튼
   await evaluate(`document.getElementById('qr-scan-btn').click()`);

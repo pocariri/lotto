@@ -168,7 +168,8 @@ Lotto.check = (function () {
   function removeGame(g) {
     if (g === 0) return; // A게임은 삭제 불가 (비우기만)
     state.games.splice(g, 1);
-    if (state.activeGame >= state.games.length) state.activeGame = state.games.length - 1;
+    if (state.activeGame > g) state.activeGame--;
+    else if (state.activeGame >= state.games.length) state.activeGame = state.games.length - 1;
     state.activeSlot = firstEmpty(state.games[state.activeGame]);
     state.results = null;
     render();
@@ -216,11 +217,13 @@ Lotto.check = (function () {
     var parsed = Lotto.logic.parseTicketQr(text);
     if (!parsed) {
       notice('로또 용지의 QR 코드를 찾지 못했어요.');
+      el.notice.scrollIntoView({ block: 'nearest' }); // 안내가 패드 아래라 화면 밖일 수 있음 — 보이게 스크롤
       return;
     }
     var latest = state.chipRounds[0];
     if (latest && parsed.round > latest) {
       notice('이 용지는 ' + parsed.round + '회예요. 토요일 추첨 후에 확인해 주세요.');
+      el.notice.scrollIntoView({ block: 'nearest' }); // 안내가 패드 아래라 화면 밖일 수 있음 — 보이게 스크롤
       return;
     }
     state.games = parsed.games.map(function (g) { return g.slice(); });

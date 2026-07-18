@@ -11,6 +11,7 @@ Lotto.qrscan = (function () {
   var onResult = null;
   var lastFocus = null; // 오버레이 닫으면 원래 포커스로 복귀 (접근성)
   var canvas = null, ctx = null;
+  var camGen = 0; // 권한 대기 중 닫기→재열기 시 옛 스트림이 새 스트림을 덮어쓰지 않게 막는 세대 번호
 
   function init() {
     el.overlay = document.getElementById('qr-overlay');
@@ -43,16 +44,18 @@ Lotto.qrscan = (function () {
   }
 
   function startCamera() {
+    var gen = ++camGen; // 이번 호출의 세대 번호를 붙잡아둔다
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       cameraFail();
       return;
     }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
       .then(function (s) {
-        if (el.overlay.hidden) { stopTracks(s); return; } // 기다리는 동안 닫았으면 바로 끔
+        // 기다리는 동안 닫았거나(오버레이 숨김) 이미 새로 열려서(세대 번호 불일치) 무효가 됐으면 바로 끔
+        if (gen !== camGen || el.overlay.hidden) { stopTracks(s); return; }
         stream = s;
         el.video.srcObject = s;
-        el.video.play();
+        el.video.play().catch(function () {}); // 자동재생 거부 시 콘솔 오류 방지
         el.hint.textContent = '용지의 QR 코드를 화면에 비춰주세요';
         timer = setInterval(scanFrame, 300);
       })
@@ -111,6 +114,7 @@ Lotto.qrscan = (function () {
   }
 
   function close() {
+    camGen++; // 대기 중이던 이전 세대의 스트림 응답을 전부 무효화
     if (timer) { clearInterval(timer); timer = null; }
     if (stream) { stopTracks(stream); stream = null; }
     el.video.srcObject = null;
