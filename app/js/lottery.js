@@ -122,6 +122,41 @@ Lotto.logic = {
     return picks.sort(function (a, b) { return a - b; });
   },
 
+  // ---- 당첨확인 다게임/QR (스펙 2026-07-18) ----
+
+  MAX_GAMES: 5, // 용지 한 장의 최대 게임 수 (A~E)
+
+  // 용지 QR 주소 → { round, games[][6] } | null.
+  // 형식: ...?v=<회차숫자>(<영문자><숫자12자리>)반복<꼬리 무시>
+  //   예) ...?v=1107m061430314041  → 1107회, [6,14,30,31,40,41]
+  // 게임별 검증(1~45, 중복 없음)을 통과한 게임만 채택하고 오름차순 정렬.
+  // 끝에 붙는 일련번호 등 꼬리는 무시한다(인쇄 시기별 변형 대비).
+  parseTicketQr(text) {
+    if (typeof text !== 'string') return null;
+    var m = text.match(/(?:^|[?&])v=([0-9A-Za-z]+)/);
+    if (!m) return null;
+    var v = m[1];
+    var head = v.match(/^\d{1,4}/);
+    if (!head) return null;
+    var round = parseInt(head[0], 10);
+    if (!(round >= 1)) return null;
+
+    var self = this;
+    var games = [];
+    var re = /[A-Za-z](\d{12})/g;
+    var g;
+    while ((g = re.exec(v)) !== null && games.length < this.MAX_GAMES) {
+      var nums = [];
+      for (var i = 0; i < 12; i += 2) nums.push(parseInt(g[1].slice(i, i + 2), 10));
+      var okRange = nums.every(function (n) { return n >= self.MIN && n <= self.MAX; });
+      if (okRange && new Set(nums).size === this.PICK) {
+        games.push(nums.slice().sort(function (a, b) { return a - b; }));
+      }
+    }
+    if (!games.length) return null;
+    return { round: round, games: games };
+  },
+
   // 맞은 개수(+보너스) → 등수
   rank(matches, bonusHit) {
     if (matches === 6) return '1등';

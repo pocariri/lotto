@@ -195,5 +195,57 @@ tryBlock('성향·바닥 통계 검증', () => {
   assert('세게 핫에서도 1번이 고착 없이 계속 나옴 (' + c1 + '회)', c1 > 20);
 });
 
+// ---- 당첨확인 확장: 용지 QR 파싱 (스펙 2026-07-18 4절) ----
+// parseTicketQr(text) → { round, games[][6] } | null
+// 실제 용지 QR 예: https://m.dhlottery.co.kr/qr.do?method=winQr&v=1107m061430314041
+
+// 18) 1게임 (실제 용지 형식)
+tryBlock('QR 1게임', () => {
+  const p = L.parseTicketQr('https://m.dhlottery.co.kr/qr.do?method=winQr&v=1107m061430314041');
+  assert('QR 1게임: 회차 1107', p && p.round === 1107);
+  assert('QR 1게임: 번호', p && JSON.stringify(p.games) === JSON.stringify([[6, 14, 30, 31, 40, 41]]));
+});
+
+// 19) 5게임 + 게임마다 다른 구분 글자(m/q 혼용) + 신형 주소
+tryBlock('QR 5게임', () => {
+  const v5 = '0843m010203040506q111213141516m212223242526q313233343536m404142434445';
+  const p = L.parseTicketQr('http://qr.dhlottery.co.kr/?v=' + v5);
+  assert('QR 5게임: 회차 843', p && p.round === 843);
+  assert('QR 5게임: 5개', p && p.games.length === 5);
+  assert('QR 5게임: 마지막 게임', p && JSON.stringify(p.games[4]) === JSON.stringify([40, 41, 42, 43, 44, 45]));
+});
+
+// 20) 마지막 게임 뒤에 일련번호 꼬리가 붙어도 무시 (인쇄 변형 대비)
+tryBlock('QR 꼬리 무시', () => {
+  const p = L.parseTicketQr('https://m.dhlottery.co.kr/qr.do?method=winQr&v=1200q0102030405061234567890');
+  assert('QR 꼬리: 1게임만', p && p.games.length === 1 && JSON.stringify(p.games[0]) === JSON.stringify([1, 2, 3, 4, 5, 6]));
+});
+
+// 21) 번호가 뒤섞여 있어도 오름차순으로 정렬해서 돌려준다
+tryBlock('QR 정렬', () => {
+  const p = L.parseTicketQr('x?v=1200q060504030201');
+  assert('QR 정렬: 오름차순', p && JSON.stringify(p.games[0]) === JSON.stringify([1, 2, 3, 4, 5, 6]));
+});
+
+// 22) 불량 입력은 전부 null 또는 걸러냄
+tryBlock('QR 불량 입력', () => {
+  assert('QR 불량: 로또 아님', L.parseTicketQr('https://example.com/hello') === null);
+  assert('QR 불량: 빈 문자열', L.parseTicketQr('') === null);
+  assert('QR 불량: 문자열 아님', L.parseTicketQr(null) === null);
+  assert('QR 불량: 범위 밖(00)', L.parseTicketQr('x?v=1200q000000000000') === null);
+  assert('QR 불량: 범위 밖(46)', L.parseTicketQr('x?v=1200q464646464646') === null);
+  assert('QR 불량: 중복 번호', L.parseTicketQr('x?v=1200q010101010101') === null);
+  assert('QR 불량: 회차 없음', L.parseTicketQr('x?v=q010203040506') === null);
+});
+
+// 23) 유효/불량 섞이면 유효한 게임만, 6게임 이상이면 앞의 5게임만
+tryBlock('QR 부분 채택', () => {
+  const mix = L.parseTicketQr('x?v=1200q000000000000q111213141516');
+  assert('QR 부분: 유효 게임만', mix && mix.games.length === 1 && mix.games[0][0] === 11);
+  const six = L.parseTicketQr('x?v=1200' + 'q010203040506'.repeat(6));
+  assert('QR 부분: 최대 5게임', six && six.games.length === 5);
+  assert('MAX_GAMES 상수', L.MAX_GAMES === 5);
+});
+
 console.log(failures === 0 ? '\n== 전부 통과 ==' : '\n== 실패 ' + failures + '건 ==');
 process.exit(failures === 0 ? 0 : 1);
