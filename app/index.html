@@ -108,13 +108,15 @@
       <!-- ============ 탭 2 : 당첨 확인 ============ -->
       <section id="tab-check" class="check" role="tabpanel" aria-labelledby="tab-btn-check" hidden>
         <h2 class="screen-title">당첨 확인</h2>
-        <p class="screen-sub">회차를 고르고 내 번호 6개를 입력하세요</p>
+        <p class="screen-sub">회차를 고르고 게임별 번호 6개를 입력하세요</p>
         <p class="status-note" id="check-status" role="status">당첨 정보를 불러오는 중…</p>
         <div id="check-content" hidden>
         <div class="round-chips" id="round-chips"></div>
+        <button type="button" id="qr-scan-btn" class="btn-outline btn-outline--qr">용지 QR로 확인</button>
         <div class="card entry-card">
           <p class="label">내 번호</p>
-          <div class="entry-row" id="entry-row"></div>
+          <div id="games-list"></div>
+          <button type="button" id="add-game-btn" class="add-game-btn">＋ 게임 추가 (1/5)</button>
         </div>
         <div class="card pad-card">
           <div class="pad-grid" id="pad-grid"></div>
@@ -124,10 +126,8 @@
         <div class="check-result" id="check-result" hidden>
           <p class="sub" id="check-round-label"></p>
           <div class="win-row" id="win-row"></div>
-          <div class="rank-box" id="rank-box">
-            <p class="match" id="match-text"></p>
-            <p class="rank" id="rank-text"></p>
-          </div>
+          <p class="result-summary" id="result-summary"></p>
+          <div class="game-results" id="game-results"></div>
           <p class="prize-line" id="prize-text"></p>
         </div>
         </div><!-- /check-content -->

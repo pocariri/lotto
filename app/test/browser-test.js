@@ -159,12 +159,12 @@ async function main() {
   const expectChips = [0, 1, 2, 3, 4].map(i => (latest.round - i) + '회');
   assert('회차 chip 5개 = 최신부터', JSON.stringify(chipLabels) === JSON.stringify(expectChips), JSON.stringify(chipLabels));
 
-  // 빈 입력 안내
+  // 빈 입력 안내 (다게임 문구)
   await evaluate(`document.getElementById('run-check-btn').click()`);
   const emptyNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
-  assert('빈 입력 안내 문구', /6개를 모두 채워야/.test(emptyNotice || ''), emptyNotice);
+  assert('빈 입력 안내 문구', /번호를 입력하거나 QR을 스캔해 주세요/.test(emptyNotice || ''), emptyNotice);
 
-  // 이전 회차 chip 선택 → 그 회차 당첨번호 6개 입력 → 1등
+  // 이전 회차 chip 선택 → A게임에 그 회차 당첨번호 6개 → 1등
   await evaluate(`document.getElementById('round-chips').children[1].click()`);
   assert('회차 데이터 로딩 완료', await waitFor(`document.getElementById('check-status').hidden`));
   await evaluate(`(function(){
@@ -173,20 +173,74 @@ async function main() {
   })()`);
   await evaluate(`document.getElementById('run-check-btn').click()`);
   await sleep(300);
-  const checkResult = await evaluate(`({
-    round: document.getElementById('check-round-label').textContent,
-    match: document.getElementById('match-text').textContent,
-    rank: document.getElementById('rank-text').textContent,
-    prize: document.getElementById('prize-text').textContent,
-    shown: !document.getElementById('check-result').hidden })`);
-  assert('당첨번호 6개 입력 → 1등',
-    checkResult.shown && checkResult.rank === '1등' && checkResult.match === '6개 일치' &&
+  const checkResult = await evaluate(`(function(){
+    var rows = document.querySelectorAll('#game-results .game-result-row');
+    return {
+      round: document.getElementById('check-round-label').textContent,
+      rows: rows.length,
+      rankA: rows[0] ? rows[0].querySelector('.game-result-rank').textContent : '',
+      summary: document.getElementById('result-summary').textContent,
+      prize: document.getElementById('prize-text').textContent,
+      shown: !document.getElementById('check-result').hidden };
+  })()`);
+  assert('당첨번호 6개 입력 → A게임 1등',
+    checkResult.shown && checkResult.rows === 1 &&
+    /1등/.test(checkResult.rankA) && /6개 일치/.test(checkResult.rankA) &&
     checkResult.round === prevRound.round + '회 당첨번호', JSON.stringify(checkResult));
+  assert('요약 줄: 1게임 중 1등 1개', /1게임 중 1등 1개/.test(checkResult.summary), checkResult.summary);
   const expectPrize = prevRound.firstPrize.winners > 0
     ? '이 회차 1등: ' + prevRound.firstPrize.winners + '명 · 1인당 ' + prevRound.firstPrize.amountPerWinner.toLocaleString('ko-KR') + '원'
     : '이 회차는 1등 당첨자 없음';
   assert('1등 당첨금 표시', checkResult.prize === expectPrize, checkResult.prize + ' vs ' + expectPrize);
   await shot('04-check-result.png');
+
+  // ---- 다게임: B게임 추가 → 반쯤 채움 안내 → 다 채우면 게임별 결과 ----
+  const winSetPrev = new Set(prevRound.numbers.concat([prevRound.bonus]));
+  const losing = [];
+  for (let n = 1; n <= 45 && losing.length < 6; n++) if (!winSetPrev.has(n)) losing.push(n);
+
+  await evaluate(`document.getElementById('add-game-btn').click()`);
+  assert('게임 추가 → 2줄', await evaluate(`document.querySelectorAll('#games-list .game-row').length`) === 2);
+  // 방금 추가된 B게임이 활성 — 3개만 넣고 확인 → 안내
+  await evaluate(`(function(){
+    var pad = document.getElementById('pad-grid');
+    ${JSON.stringify(losing.slice(0, 3))}.forEach(function(n){ pad.children[n-1].click(); });
+  })()`);
+  await evaluate(`document.getElementById('run-check-btn').click()`);
+  const halfNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
+  assert('반쯤 채운 게임 안내', /B게임이 6개가 안 됐어요/.test(halfNotice || ''), halfNotice);
+  // 나머지 3개 채우고 확인 → 게임별 결과 2줄 (A=1등, B=낙첨)
+  await evaluate(`(function(){
+    var pad = document.getElementById('pad-grid');
+    ${JSON.stringify(losing.slice(3))}.forEach(function(n){ pad.children[n-1].click(); });
+  })()`);
+  await evaluate(`document.getElementById('run-check-btn').click()`);
+  await sleep(300);
+  const multi = await evaluate(`(function(){
+    var rows = document.querySelectorAll('#game-results .game-result-row');
+    return { rows: rows.length,
+      rankA: rows[0] ? rows[0].querySelector('.game-result-rank').textContent : '',
+      rankB: rows[1] ? rows[1].querySelector('.game-result-rank').textContent : '',
+      summary: document.getElementById('result-summary').textContent };
+  })()`);
+  assert('다게임 결과: A=1등, B=낙첨',
+    multi.rows === 2 && /1등/.test(multi.rankA) && /낙첨/.test(multi.rankB), JSON.stringify(multi));
+  assert('다게임 요약: 2게임 중 1등 1개', /2게임 중 1등 1개/.test(multi.summary), multi.summary);
+  await shot('08-check-multi.png');
+
+  // ---- 게임 추가 한도(5)와 삭제 ----
+  await evaluate(`document.getElementById('add-game-btn').click()`); // 3
+  await evaluate(`document.getElementById('add-game-btn').click()`); // 4
+  await evaluate(`document.getElementById('add-game-btn').click()`); // 5
+  assert('5게임이면 추가 버튼 비활성', await evaluate(`document.getElementById('add-game-btn').disabled`) === true);
+  for (let i = 0; i < 3; i++) {
+    await evaluate(`(function(){
+      var rows = document.querySelectorAll('#games-list .game-row');
+      rows[rows.length - 1].querySelector('.game-del').click();
+    })()`);
+  }
+  assert('마지막 줄 3개 삭제 → 2줄', await evaluate(`document.querySelectorAll('#games-list .game-row').length`) === 2);
+  assert('삭제 후 추가 버튼 다시 활성', await evaluate(`document.getElementById('add-game-btn').disabled`) === false);
 
   // ---- 통계 탭 (실데이터) ----
   await evaluate(`document.getElementById('tab-btn-stats').click()`);

@@ -6,19 +6,43 @@
 /* 회차 칩 (칩 모양 자체는 components.css의 .chip 공용) */
 .round-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; }
 
-/* 내 번호 카드 */
+/* 내 번호 카드 — 게임(A~E) 줄 목록 */
 .entry-card { padding: 18px 16px; margin-bottom: 14px; }
 .entry-card .label { margin: 0 0 12px; font-size: 12px; font-weight: 700; color: var(--muted); }
-.entry-row { display: flex; gap: 8px; justify-content: space-between; }
+
+.game-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; margin-bottom: 8px;
+  border-radius: 14px; border: 1.5px solid transparent;
+}
+.game-row.is-active { border-color: var(--brand); background: #eef3f7; }
+.game-label { flex: 0 0 16px; font-size: 13px; font-weight: 800; color: var(--muted); text-align: center; }
+.entry-row { display: flex; gap: 6px; }
 
 /* 빈 칸 / 선택 중인 칸 / 채워진 칸 */
 .slot {
-  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
   border: 2px dashed #cfc8bd; background: #f5f2ec;
 }
-.slot.is-active { border: 2px solid var(--brand); background: #eef3f7; }
+.slot.is-active { border: 2px solid var(--brand); background: #fff; }
 /* 채워진 칸: .slot 배경이 공 색을 덮지 않도록 별도 클래스로 */
 .entry-ball { border: none; padding: 0; cursor: pointer; }
+
+.game-del {
+  flex: 0 0 auto; width: 26px; height: 26px; margin-left: auto;
+  border: none; border-radius: 50%; cursor: pointer;
+  background: #f0ede7; color: var(--muted); font-size: 15px; font-weight: 800; line-height: 1;
+}
+
+.add-game-btn {
+  display: block; width: 100%; padding: 11px; margin-top: 2px;
+  border: 1.5px dashed #cfc8bd; border-radius: 12px;
+  background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.add-game-btn:disabled { opacity: .45; cursor: default; }
+
+/* QR 버튼 (회차 칩 아래) */
+.btn-outline--qr { width: 100%; padding: 13px; margin-bottom: 14px; background: #fff; color: var(--ink); font-size: 14px; }
 
 /* 숫자패드 카드 */
 .pad-card { padding: 16px; margin-bottom: 16px; }
@@ -51,11 +75,17 @@
 .win-row { display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 12px 0 18px; }
 .win-row .plus { font-size: 20px; color: #b0a99e; font-weight: 700; margin: 0 2px; }
 
-.rank-box { text-align: center; padding: 16px; border-radius: 14px; background: #f0ede7; }
-.rank-box.is-win { background: #eef3f7; }
-.rank-box .match { margin: 0; font-size: 14px; font-weight: 600; color: var(--muted-2); }
-.rank-box .rank { margin: 4px 0 0; font-size: 32px; font-weight: 800; letter-spacing: -.02em; color: var(--muted); }
-.rank-box.is-win .rank { color: var(--brand); }
+/* 요약 한 줄 + 게임별 결과 */
+.result-summary { margin: 0 0 6px; text-align: center; font-size: 15px; font-weight: 800; color: var(--muted); }
+.result-summary.is-win { color: var(--brand); }
+
+.game-result-row { display: flex; align-items: center; gap: 6px; padding: 10px 0; border-top: 1px solid #f0ede7; }
+.game-result-row .balls { display: flex; gap: 4px; }
+.ball--miss { opacity: .28; }
+.game-result-rank { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; }
+.game-result-rank b { font-size: 15px; font-weight: 800; color: var(--muted); }
+.game-result-rank.is-win b { color: var(--brand); }
+.game-result-rank span { font-size: 11px; font-weight: 600; color: var(--muted-2); }
 
 /* 1등 당첨금 줄 (계약 v1.2 firstPrize) */
 .prize-line { margin: 12px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted-2); }

@@ -22,6 +22,7 @@
 .ball--50 { width: 50px; height: 50px; font-size: 21px; }
 .ball--44 { width: 44px; height: 44px; font-size: 18px; }
 .ball--38 { width: 38px; height: 38px; font-size: 16px; }
+.ball--28 { width: 28px; height: 28px; font-size: 12px; }
 
 /* 등장 연출 */
 .ball--pop { animation: ballpop .55s cubic-bezier(.2, 1.3, .5, 1) both; }
