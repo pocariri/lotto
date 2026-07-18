@@ -89,3 +89,25 @@
 
 /* 1등 당첨금 줄 (계약 v1.2 firstPrize) */
 .prize-line { margin: 12px 0 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted-2); }
+
+/* ---- QR 스캔 오버레이 (스펙 3-4) ---- */
+.qr-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(22, 27, 34, .93);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.qr-overlay[hidden] { display: none; }
+.qr-overlay-inner { width: min(100%, 380px); text-align: center; }
+.qr-title { margin: 0 0 12px; color: #fff; font-size: 17px; font-weight: 800; }
+.qr-view { position: relative; border-radius: 18px; overflow: hidden; background: #000; }
+.qr-view:has(> #qr-video[hidden]) { display: none; } /* 카메라 실패 시 뷰 전체 숨김 */
+#qr-video { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+.qr-guide {
+  position: absolute; left: 50%; top: 50%; width: 200px; height: 200px;
+  transform: translate(-50%, -50%);
+  border: 2.5px solid rgba(255, 255, 255, .85); border-radius: 14px;
+}
+.qr-hint { margin: 14px 0; color: #e7ebef; font-size: 14px; font-weight: 600; }
+.qr-file-btn { width: 100%; background: #fff; color: var(--ink); margin-bottom: 4px; }
+.qr-close-btn { color: #cfd6dc; }

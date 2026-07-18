@@ -8,6 +8,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { makeQrBmp } = require('./qr-fixture.js');
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const BASE = 'http://localhost:8899';
@@ -35,6 +36,7 @@ async function main() {
   const stats = await fetchData('/api/stats');
   const prevRound = await fetchData('/api/draw?round=' + (latest.round - 1));
   const round1 = await fetchData('/api/draw?round=1'); // 1등 당첨자 0명 회차
+  const oldRound = await fetchData('/api/draw?round=' + (latest.round - 10)); // chip(최근 5개) 밖 회차
 
   // 크롬 프로필(잡파일 수십 MB)은 저장소 밖 시스템 임시 폴더에 만든다
   const profile = path.join(os.tmpdir(), 'lotto-browser-test-chrome-profile');
@@ -241,6 +243,84 @@ async function main() {
   }
   assert('마지막 줄 3개 삭제 → 2줄', await evaluate(`document.querySelectorAll('#games-list .game-row').length`) === 2);
   assert('삭제 후 추가 버튼 다시 활성', await evaluate(`document.getElementById('add-game-btn').disabled`) === false);
+
+  // ---- QR 스캔: 사진 경로로 자동 검증 (카메라는 헤드리스에서 불가 — 배포 전 실물 확인은 사장 몫) ----
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const qrGood = 'https://m.dhlottery.co.kr/qr.do?method=winQr&v=' + prevRound.round
+    + 'q' + prevRound.numbers.map(pad2).join('')
+    + 'q' + losing.map(pad2).join('');
+  const qrFuture = 'https://m.dhlottery.co.kr/qr.do?method=winQr&v=' + (latest.round + 1) + 'q010203040506';
+  const qrBad = 'https://example.com/not-a-lotto-ticket';
+  const fixture = (name, text) => {
+    const p = path.join(os.tmpdir(), name);
+    fs.writeFileSync(p, makeQrBmp(text));
+    return p;
+  };
+  const goodPath = fixture('lotto-qr-good.bmp', qrGood);
+  const futurePath = fixture('lotto-qr-future.bmp', qrFuture);
+  const badPath = fixture('lotto-qr-bad.bmp', qrBad);
+
+  await send('DOM.enable');
+  const uploadQr = async (filePath) => {
+    await evaluate(`document.getElementById('qr-scan-btn').click()`);
+    await sleep(400); // 오버레이 열림 + (헤드리스) 카메라 실패 → 사진 폴백 표시
+    const doc = await send('DOM.getDocument');
+    const node = await send('DOM.querySelector', { nodeId: doc.result.root.nodeId, selector: '#qr-file-input' });
+    await send('DOM.setFileInputFiles', { files: [filePath], nodeId: node.result.nodeId });
+    await sleep(900); // FileReader + 해독 + (캐시된) 회차 데이터 + 결과
+  };
+
+  // (1) 정상 2게임 QR → 자동으로 게임별 결과까지
+  await uploadQr(goodPath);
+  const qrResult = await evaluate(`(function(){
+    var rows = document.querySelectorAll('#game-results .game-result-row');
+    return { overlayHidden: document.getElementById('qr-overlay').hidden,
+      rows: rows.length,
+      rankA: rows[0] ? rows[0].querySelector('.game-result-rank').textContent : '',
+      rankB: rows[1] ? rows[1].querySelector('.game-result-rank').textContent : '',
+      summary: document.getElementById('result-summary').textContent,
+      gameRows: document.querySelectorAll('#games-list .game-row').length };
+  })()`);
+  assert('QR 사진 인식 → 2게임 자동 결과 (A=1등, B=낙첨)',
+    qrResult.overlayHidden && qrResult.rows === 2 && qrResult.gameRows === 2 &&
+    /1등/.test(qrResult.rankA) && /낙첨/.test(qrResult.rankB), JSON.stringify(qrResult));
+  assert('QR 요약 줄', /2게임 중 1등 1개/.test(qrResult.summary), qrResult.summary);
+  await shot('09-check-qr.png');
+
+  // (1-b) chip에 없는 옛 회차 QR → 임시 chip 맨 앞 + 자동 결과 (스펙 3-4)
+  const qrOld = 'https://m.dhlottery.co.kr/qr.do?method=winQr&v=' + oldRound.round
+    + 'q' + oldRound.numbers.map(pad2).join('');
+  const oldPath = fixture('lotto-qr-old.bmp', qrOld);
+  await uploadQr(oldPath);
+  assert('옛 회차 QR: 결과 표시', await waitFor(`!document.getElementById('check-result').hidden`));
+  const oldView = await evaluate(`(function(){
+    var chips = document.getElementById('round-chips').children;
+    var rows = document.querySelectorAll('#game-results .game-result-row');
+    return { firstChip: chips[0].textContent, firstActive: chips[0].classList.contains('is-active'),
+      chipCount: chips.length, rows: rows.length,
+      rankA: rows[0] ? rows[0].querySelector('.game-result-rank').textContent : '' };
+  })()`);
+  assert('옛 회차 QR: 임시 chip 맨 앞 + A게임 1등',
+    oldView.firstChip === oldRound.round + '회' && oldView.firstActive &&
+    oldView.chipCount === 6 && oldView.rows === 1 && /1등/.test(oldView.rankA), JSON.stringify(oldView));
+
+  // (2) 아직 추첨 전 회차 QR → 안내 문구
+  await uploadQr(futurePath);
+  const futureNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
+  assert('추첨 전 회차 QR 안내',
+    new RegExp('이 용지는 ' + (latest.round + 1) + '회예요').test(futureNotice || '') &&
+    /토요일 추첨 후/.test(futureNotice || ''), futureNotice);
+
+  // (3) 로또가 아닌 QR → 안내 문구
+  await uploadQr(badPath);
+  const badNotice = await evaluate(`!document.getElementById('check-notice').hidden && document.getElementById('check-notice').textContent`);
+  assert('로또 아닌 QR 안내', /로또 용지의 QR 코드를 찾지 못했어요/.test(badNotice || ''), badNotice);
+
+  // (4) 오버레이 닫기 버튼
+  await evaluate(`document.getElementById('qr-scan-btn').click()`);
+  await sleep(300);
+  await evaluate(`document.getElementById('qr-close-btn').click()`);
+  assert('오버레이 닫기', await evaluate(`document.getElementById('qr-overlay').hidden`) === true);
 
   // ---- 통계 탭 (실데이터) ----
   await evaluate(`document.getElementById('tab-btn-stats').click()`);

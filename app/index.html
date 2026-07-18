@@ -183,10 +183,25 @@
 
   </div>
 </div>
+<!-- QR 스캔 오버레이 (당첨확인 탭에서 사용) — 스펙 3-4 -->
+<div class="qr-overlay" id="qr-overlay" hidden>
+  <div class="qr-overlay-inner">
+    <p class="qr-title">용지 QR로 확인</p>
+    <div class="qr-view">
+      <video id="qr-video" playsinline muted></video>
+      <div class="qr-guide" aria-hidden="true"></div>
+    </div>
+    <p class="qr-hint" id="qr-hint" role="status">카메라를 켜는 중…</p>
+    <button type="button" id="qr-file-btn" class="btn-outline qr-file-btn">사진에서 불러오기</button>
+    <button type="button" id="qr-close-btn" class="btn-ghost qr-close-btn">닫기</button>
+    <input type="file" id="qr-file-input" accept="image/*" hidden>
+  </div>
+</div>
 <script src="js/vendor/jsqr.min.js" defer></script>
 <script src="js/lottery.js" defer></script>
 <script src="js/api.js" defer></script>
 <script src="js/draw.js" defer></script>
+<script src="js/qr-scan.js" defer></script>
 <script src="js/check.js" defer></script>
 <script src="js/stats.js" defer></script>
 <script src="js/main.js" defer></script>
