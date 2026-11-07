@@ -41,6 +41,13 @@ button { font-family: inherit; }
   box-shadow: 0 0 60px rgba(46, 54, 60, .2);
 }
 
+/* 홈 화면 앱(PWA)으로 폰에서 열면 상단 상태바(시계·배터리) 뒤가 body 배경색을 따라간다.
+   데스크톱용 회색 바깥 배경(#cdd1d5) 대신 프레임 맨 위 색(#eef1f4)으로 맞춰 화면이 끊김 없이 이어지게 한다.
+   (넓은 화면 = 아이패드 등에서는 회색 바깥 배경 디자인 그대로) */
+@media (display-mode: standalone) and (max-width: 440px) {
+  body, .page { background: #eef1f4; }
+}
+
 /* 상단 바 */
 .topbar { padding: 18px 22px 12px; display: flex; align-items: center; justify-content: space-between; }
 .brand { display: flex; align-items: center; gap: 9px; }

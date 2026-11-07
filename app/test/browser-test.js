@@ -468,6 +468,36 @@ async function main() {
     JSON.stringify(pwa.icons));
   assert('아이폰용 아이콘 180px', pwa.appleSize === 180, String(pwa.appleSize));
 
+  // 상태바(시계·배터리) 뒤 색 = body 배경. 앱 모드(폰)에선 프레임 맨 위 색과 같아야 끊김이 없다.
+  // (헤드리스 크롬은 display-mode 흉내를 받기만 하고 적용하지 않음 — 2026-11-07 확인.
+  //  그래서 앱 모드 규칙을 스타일시트에서 직접 찾아, 그 색이 프레임 맨 위 색과 같은지 본다.)
+  const bg = await evaluate(`(function(){
+    var rule = null;
+    Array.from(document.styleSheets).forEach(function(s){
+      try { Array.from(s.cssRules).forEach(function(r){
+        if (r.conditionText && /display-mode:\\s*standalone/.test(r.conditionText)) rule = r;
+      }); } catch (e) {}
+    });
+    var probe = document.createElement('div');
+    document.body.appendChild(probe);
+    var color = function(v){ probe.style.backgroundColor = ''; probe.style.backgroundColor = v; return getComputedStyle(probe).backgroundColor; };
+    var inner = rule ? rule.cssRules[0] : null;
+    var frameTop = (getComputedStyle(document.querySelector('.frame')).backgroundImage.match(/rgb\\([^)]*\\)/) || [''])[0];
+    var out = {
+      browser: getComputedStyle(document.body).backgroundColor + '|' + getComputedStyle(document.querySelector('.page')).backgroundColor,
+      condition: rule ? rule.conditionText : null,
+      selector: inner ? inner.selectorText : null,
+      appBg: inner ? color(inner.style.background || inner.style.backgroundColor) : null,
+      frameTop: frameTop
+    };
+    probe.remove();
+    return out;
+  })()`);
+  assert('일반 브라우저: 바깥 배경은 디자인 회색 그대로', bg.browser === 'rgb(205, 209, 213)|rgb(197, 202, 207)', JSON.stringify(bg));
+  assert('홈 화면 앱(폰 폭) 규칙: body·.page 배경 = 프레임 맨 위 색 #eef1f4',
+    /max-width:\s*440px/.test(bg.condition) && /body/.test(bg.selector) && /\.page/.test(bg.selector) &&
+    bg.appBg === 'rgb(238, 241, 244)' && bg.frameTop === bg.appBg, JSON.stringify(bg));
+
   const swReady = await waitFor(`navigator.serviceWorker.ready.then(function(r){ return !!r.active; })`, 10000);
   assert('서비스 워커 설치·활성', swReady);
   await send('Page.reload');
