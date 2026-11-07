@@ -17,7 +17,7 @@
 
 **서비스 주소**: https://lotto-sspocari.vercel.app (2026-07-07 정식 오픈, 스모크 테스트 전 항목 통과)
 
-## 2. 현재 상태 (2026-07-13 기준)
+## 2. 현재 상태 (2026-11-07 기준)
 
 | 영역 | 상태 |
 |---|---|
@@ -26,7 +26,10 @@
 | 배포 (Vercel) | ✅ 완료 (검수 10차 — 실서비스 스모크 테스트 통과) |
 | 1232회 자동 반영 | ✅ 확인 (2026-07-13 실서비스에서 draw·stats 모두 1232회 정상 — "방치해도 최신" 설계 첫 실전 검증) |
 | Phase 3 (사진 인식) | ❌ 안 함 (사장 결정 2026-07-13) |
-| Phase 4 (추첨 모드: 완전 랜덤/핫/콜드) | ✅ 구현·검증 완료 (2026-07-13, `report-front.md` Phase 4 보고 참조) — **배포는 아직** (git push 대기) |
+| Phase 4 (추첨 모드: 완전 랜덤/핫/콜드) | ✅ 완료·배포 (2026-07-13, `report-front.md` Phase 4) |
+| Phase 5 (당첨확인 다게임 최대 5 + 용지 QR 스캔) | ✅ 완료·배포 + 사장 실물 용지 스캔 통과 (2026-07-18, `report-front.md` Phase 5) |
+| Phase 6 (PWA: 홈 화면 앱 + 오프라인 화면) | ✅ 완료·배포 + 사장 폰 설치 확인 (2026-11-07, `report-front.md` Phase 6) |
+| git 브랜치 | `main` 하나 (2026-11-07 `master`에서 이름 변경). Vercel 프로덕션도 `main` 추적 |
 
 ## 3. 구조 — 뭐가 어디에 있나
 
@@ -82,7 +85,7 @@ lotto/
 ## 6. 운영 — 평소에 할 일과 문제 시 대처
 
 - **평소**: 없음. 토요일 새 회차는 자동 반영(추첨 후 최대 ~1시간).
-- **배포**: `git push`만 하면 Vercel이 자동 재배포. 배포 전 권장: 스냅샷 재생성(`node api/_scripts/build-snapshot.js`). 전체 체크리스트는 `report-api.md` "배포 직전 체크리스트".
+- **배포**: `main`에 `git push`만 하면 Vercel이 자동 재배포 (push는 사장 몫). 배포 전 권장: 스냅샷 재생성(`node api/_scripts/build-snapshot.js`). 전체 체크리스트는 `report-api.md` "배포 직전 체크리스트".
 - **사이트가 로그인으로 튕기면**: Vercel 대시보드 → Settings → Deployment Protection 확인 (첫 배포 때 겪음 — 코드 문제 아님).
 - **데이터가 안 나오면**: ① `/api/draw`를 직접 열어 에러 확인 → ② 502면 동행복권 개편 가능성 → `api/_lib/dhlottery.js`의 주소·응답 필드 확인.
 - **검증 도구**: `node app/test/local-server.js 8899` → 화면+함수 통합 실행 / `node app/test/test-lottery.js` → 순수 로직 21건 / `node app/test/browser-test.js` → 헤드리스 크롬 화면 검증.
@@ -100,7 +103,9 @@ lotto/
 - [x] ~~7/11(토) 저녁: 사이트에서 1232회 자동 반영 확인~~ → 2026-07-13 확인 완료 (실서비스 `/api/draw`·`/api/stats` 모두 1232회)
 - [x] ~~(사소) `report-front.md` Phase 1 절의 "mock 데이터로 동작" 표현 2곳~~ → 2026-07-13 "Phase 1 당시" 시점 명시 완료
 - [x] ~~Phase 3 후보 (사장 결정 대기)~~ → 사장 결정(2026-07-13): 사진 인식 **안 함**. 대신 Phase 4(추첨 모드) 진행·완료
-- [ ] **Phase 4 배포**: 로컬 구현·검증까지 끝남. 사장이 배포하자고 하면 커밋 + `git push` (Vercel 자동 재배포)
+- [x] ~~Phase 4 배포~~ → 배포 완료
+- [x] ~~Phase 5(다게임+QR)·Phase 6(PWA)~~ → 배포·실물 확인 완료
+- [ ] (선택) GitHub의 옛 `master` 브랜치 삭제: `git push origin --delete master`
 
 ## 9. 이력 문서 안내
 
