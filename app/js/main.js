@@ -39,4 +39,11 @@
   }
 
   boot();
+
+  // PWA 서비스 워커 — 실패해도 앱은 평소처럼 동작하므로 조용히 넘어간다
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
 })();

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 앱 아이콘(일반용, 둥근 모서리 — 파비콘 겸용) — 추첨 탭 idle 추첨기(.idle-drum)를 옮긴 것.
+       값 출처: css/draw.css .idle-drum / .idle-drum-inner / .idle-balls, css/base.css 색 변수.
+       추첨기 지름 300 = 원본 154px × 1.948 배. 안전영역(가운데 80%) 안에 들어가게 잡음. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c5a7c"/>
+      <stop offset="1" stop-color="#22496a"/>
+    </linearGradient>
+    <radialGradient id="drum" cx="0.40" cy="0.34" r="0.75">
+      <stop offset="0" stop-color="#fbfaf7"/>
+      <stop offset="0.78" stop-color="#d9d3c8"/>
+      <stop offset="1" stop-color="#d9d3c8"/>
+    </radialGradient>
+    <linearGradient id="drumShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".45"/>
+      <stop offset=".35" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset=".65" stop-color="#786e60" stop-opacity="0"/>
+      <stop offset="1" stop-color="#786e60" stop-opacity=".3"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.32" cy="0.28" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset=".9" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0b1c29" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <circle cx="256" cy="256" r="150" fill="url(#drum)"/>
+  </g>
+  <circle cx="256" cy="256" r="150" fill="url(#drumShade)"/>
+  <circle cx="256" cy="256" r="114" fill="none" stroke="#786e60" stroke-opacity=".28" stroke-width="5.8" stroke-dasharray="17 11.5"/>
+  <circle cx="193.7" cy="244.3" r="25.3" fill="#f4c02e"/>
+  <circle cx="193.7" cy="244.3" r="25.3" fill="url(#shine)"/>
+  <circle cx="256" cy="267.7" r="25.3" fill="#f16a6a"/>
+  <circle cx="256" cy="267.7" r="25.3" fill="url(#shine)"/>
+  <circle cx="318.3" cy="244.3" r="25.3" fill="#3faee0"/>
+  <circle cx="318.3" cy="244.3" r="25.3" fill="url(#shine)"/>
+</svg>

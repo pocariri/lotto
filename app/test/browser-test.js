@@ -426,6 +426,83 @@ async function main() {
   console.log('콘솔 오류:', consoleErrors.length ? consoleErrors : '없음');
   if (consoleErrors.length) failures++;
 
+  // ---- PWA: 앱 정보·아이콘·서비스 워커·진짜 오프라인 실행 ----
+  // 전용 임시 서버(다른 포트 = 별도 출처)를 띄웠다가 "꺼버리고" 다시 열어서, 저장본으로 화면이 뜨는지 본다.
+  // (오프라인에선 데이터 요청 실패가 콘솔에 찍히는 게 정상이라, 위의 콘솔 오류 집계 뒤에 둔다)
+  const PWA_PORT = 8898;
+  const PWA_BASE = `http://localhost:${PWA_PORT}`;
+  const pwaServer = spawn(process.execPath, [path.join(__dirname, 'local-server.js'), String(PWA_PORT)], { stdio: 'ignore' });
+  let pwaUp = false;
+  for (let i = 0; i < 40 && !pwaUp; i++) {
+    await sleep(200);
+    try { pwaUp = (await fetch(PWA_BASE + '/index.html')).ok; } catch (e) { /* 대기 */ }
+  }
+  assert('PWA 임시 서버 실행', pwaUp);
+
+  await send('Page.navigate', { url: PWA_BASE + '/' });
+  await sleep(1000);
+  const pwa = await evaluate(`(async function(){
+    var link = document.querySelector('link[rel=manifest]');
+    var m = await (await fetch(link.href)).json();
+    var sizes = await Promise.all(m.icons.map(function(ic){
+      return new Promise(function(res){
+        var img = new Image();
+        img.onload = function(){ res({ src: ic.src, want: ic.sizes, got: img.naturalWidth + 'x' + img.naturalHeight, purpose: ic.purpose }); };
+        img.onerror = function(){ res({ src: ic.src, want: ic.sizes, got: 'LOAD_FAIL' }); };
+        img.src = new URL(ic.src, link.href).href;
+      });
+    }));
+    var apple = document.querySelector('link[rel=apple-touch-icon]');
+    var appleSize = await new Promise(function(res){
+      var img = new Image(); img.onload = function(){ res(img.naturalWidth); }; img.onerror = function(){ res(0); }; img.src = apple.href;
+    });
+    return { name: m.name, display: m.display, start: m.start_url, theme: m.theme_color,
+      themeMeta: document.querySelector('meta[name=theme-color]').content,
+      icons: sizes, appleSize: appleSize };
+  })()`);
+  assert('manifest: 이름·standalone·시작주소',
+    pwa.name === '로또 드로우' && pwa.display === 'standalone' && pwa.start === '/' && pwa.theme === pwa.themeMeta,
+    JSON.stringify(pwa));
+  assert('manifest 아이콘 전부 열리고 크기 일치 (192·512·maskable)',
+    pwa.icons.length === 3 && pwa.icons.every(i => i.got === i.want) && pwa.icons.some(i => i.purpose === 'maskable'),
+    JSON.stringify(pwa.icons));
+  assert('아이폰용 아이콘 180px', pwa.appleSize === 180, String(pwa.appleSize));
+
+  const swReady = await waitFor(`navigator.serviceWorker.ready.then(function(r){ return !!r.active; })`, 10000);
+  assert('서비스 워커 설치·활성', swReady);
+  await send('Page.reload');
+  await sleep(1000);
+  const controlled = await evaluate(`!!navigator.serviceWorker.controller`);
+  assert('새로고침 후 서비스 워커가 화면을 담당', controlled);
+  const swPassApi = await evaluate(`(async function(){
+    var r = await fetch('/api/draw'); var b = await r.json(); return b.ok === true && b.data.round > 0;
+  })()`);
+  assert('온라인일 때 /api 데이터 정상 (서비스 워커가 가로채지 않음)', swPassApi);
+
+  // 서버를 꺼서 진짜 오프라인을 만든다
+  pwaServer.kill();
+  await sleep(500);
+  let serverDown = false;
+  try { await fetch(PWA_BASE + '/index.html'); } catch (e) { serverDown = true; }
+  assert('PWA 임시 서버 종료 확인 (오프라인 상태)', serverDown);
+
+  await send('Page.navigate', { url: PWA_BASE + '/' });
+  await sleep(1500);
+  const offline = await evaluate(`(function(){
+    var cssOk = getComputedStyle(document.querySelector('.frame')).maxWidth === '440px';
+    var title = document.querySelector('.draw-idle h1');
+    return { title: title ? title.textContent : null, cssOk: cssOk, hasLotto: typeof Lotto === 'object' };
+  })()`);
+  assert('오프라인: 앱 화면이 저장본으로 열림 (HTML·CSS·JS)',
+    offline.title && /행운의 번호/.test(offline.title) && offline.cssOk && offline.hasLotto, JSON.stringify(offline));
+  await evaluate(`document.getElementById('go-picker-btn').click()`);
+  await sleep(300);
+  await evaluate(`document.getElementById('run-draw-btn').click()`);
+  await sleep(6500);
+  const offlineDraw = await evaluate(`Array.from(document.querySelectorAll('#result-row .ball')).length`);
+  assert('오프라인: 추첨 탭은 끝까지 동작 (공 6개)', offlineDraw === 6, String(offlineDraw));
+  await shot('10-pwa-offline-draw.png');
+
   ws.close();
   chrome.kill();
   console.log(failures === 0 ? '\n== 전부 통과 ==' : '\n== 실패 ' + failures + '건 ==');

@@ -186,3 +186,35 @@ kill %1
 ### 사후 기록 (2026-07-18)
 
 - 위 "주의" 두 항목의 **실물 관문 통과**: 배포(커밋 `352eb60` push, Vercel 자동 반영) 후 사장이 실서비스에서 실제 로또 용지 QR을 폰 카메라로 스캔 — 회차·게임 자동 입력과 결과 표시 정상 확인("아주 잘 돼"). 카메라 실시간 경로와 실물 QR 꼬리 형식 모두 실전 검증됨. 이 기능 건은 종료.
+
+---
+
+# Phase 6 — PWA (홈 화면 앱 + 오프라인 실행) (2026-11-07)
+
+사장 지시: "PWA로 진행, 아이콘은 추첨기 모양으로".
+
+## 한 일
+
+- 홈 화면에 추가하면 **주소창 없는 앱**으로 열리게 함 (manifest + 서비스 워커).
+- 앱 아이콘: 추첨 탭 idle 추첨기(`.idle-drum`)를 그대로 옮김 — 크림색 원통(같은 radial-gradient 값) + 점선 테 + 노랑·빨강·파랑 공(가운데 공 아래로), 브랜드 남색 그라데이션(`--brand-grad`) 바탕. 원본 154px 대비 비율 그대로 확대.
+- 서비스 워커 원칙:
+  1. 화면 파일은 **네트워크 먼저** → 배포하면 다음 실행부터 바로 새 화면(옛 화면에 갇히지 않음), 인터넷 끊기면 저장본.
+  2. **`/api/`는 가로채지 않음** → 서버·CDN 캐싱("항상 최신") 설계 그대로. 오프라인이면 당첨확인·통계는 기존 오류 안내가 뜸.
+  3. Pretendard 폰트(버전 고정 주소)는 저장본 먼저.
+
+## 만들고 바꾼 파일 (전부 app/ 안, api/·루트 무변경)
+
+- 새로: `manifest.webmanifest`, `sw.js`, `icons/icon.svg`(둥근 모서리·파비콘 겸용), `icons/icon-maskable.svg`(꽉 찬 사각형, 안드로이드 마스크용), `icons/icon-192.png`, `icons/icon-512.png`, `icons/icon-maskable-512.png`, `icons/apple-touch-icon.png`(180)
+- 새로(테스트 전용, 배포 제외): `test/make-icons.js` — SVG 원본 → PNG 생성기. 아이콘 고칠 때 `node app/test/make-icons.js`
+- 수정: `index.html`(manifest·theme-color·아이콘·아이폰용 meta, 기존 data: 파비콘 → 아이콘 파일), `js/main.js`(서비스 워커 등록, 실패해도 조용히 무시), `test/local-server.js`(.webmanifest 형식), `test/browser-test.js`(PWA 검사 10건)
+
+## 확인한 것
+
+- `node app/test/test-lottery.js` 전부 통과.
+- `node app/test/browser-test.js` **2회 연속 전부 통과(50건), 콘솔 오류 0** — 서비스 워커가 켜진 상태로 기존 추첨·당첨확인·QR·통계 시나리오 회귀 없음.
+- 새 PWA 검사: manifest(이름·standalone·시작주소·theme-color 일치), 아이콘 3종 실제 크기 일치 + 아이폰 180px, 서비스 워커 활성·새로고침 후 화면 담당, 온라인 `/api/draw` 정상(안 가로챔), **임시 서버를 실제로 꺼서** 오프라인 재실행 → 화면 정상 로드 + 추첨 끝까지 동작(`shots/10-pwa-offline-draw.png`, 폰트까지 저장본으로 표시됨).
+
+## 막힌 것 · 주의
+
+- **실기기 "홈 화면에 추가"는 자동 검증 불가** — 배포 후 사장이 아이폰(사파리 공유 → 홈 화면에 추가)/안드로이드(크롬 메뉴 → 앱 설치)로 아이콘·전체화면 실행 확인이 남은 관문.
+- 화면 파일 목록이 바뀌면(새 js/css 추가) `sw.js`의 `SHELL` 목록과 `VERSION`을 같이 올릴 것. 빠뜨려도 온라인에선 문제없고 오프라인 저장본만 불완전해짐.
